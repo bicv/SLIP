@@ -8,6 +8,9 @@
 'B_sf' : 1.5, # 1.5 in Geisler
 'B_theta' : 3.14159/8.,
 'figpath' : 'figures/',
+'edgefigpath' : 'figures/edges/',
+'matpath' : 'mat/',
+'edgematpath' : 'mat/edges/',
 'datapath' : 'database/',
 'ext' : '.pdf',
 # EdgeFactory PARAMETERS
