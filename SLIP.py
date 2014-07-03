@@ -245,7 +245,7 @@ class Image:
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
-        R2[self.N_X//2 , self.N_Y//2] = np.inf
+        R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
     def show_FT(self, FT, axis=False):#,, phase=0. do_complex=False
@@ -314,11 +314,11 @@ class Image:
 #
         return coco
 
-    def olshausen_whitening_filt(self, f_0=.16, alpha=1.4, N=0.01):
+    def olshausen_whitening_filt(self, f_0=.2, alpha=1.4, N=0.01):
         """
         Returns the whitening filter used by (Olshausen, 98)
 
-        f_0 = 200 / 512
+        f_0 = 200 / 512 / 2 (?)
 
         /!\ you will have some problems at dewhitening without a low-pass
 
