@@ -11,7 +11,7 @@
 'edgefigpath' : 'figures/edges/',
 'matpath' : 'mat/',
 'edgematpath' : 'mat/edges/',
-'datapath' : 'database/',
+'datapath' : '../AssoField/database/',
 'ext' : '.pdf',
 # EdgeFactory PARAMETERS
 'd_width' : 45., # Geisler 1.23 deg (full image = 45deg)

@@ -70,14 +70,14 @@ class Image:
         import os
         try:
             filelist = os.listdir(self.full_url(name_database))
+            for garbage in ['.AppleDouble', '.DS_Store']:
+                if garbage in filelist:
+                    filelist.remove(garbage)
+            return filelist
         except:
             print('failed opening database ', name_database)
             print('failed opening database ',  self.full_url(name_database))
-        #TODO
-        for garbage in ['.AppleDouble', '.DS_Store']:
-            if garbage in filelist:
-                filelist.remove(garbage)
-        return filelist
+            return 'Failed to laod directory'
 
     def load_in_database(self, name_database, i_image=None, filename=None, verbose=True):
         """
@@ -95,9 +95,9 @@ class Image:
             if verbose: print 'Using image ', filelist[i_image]
             filename = filelist[i_image]
 
-        from pylab import imread
+#         from pylab import imread
         import os
-        image = imread(os.path.join(self.full_url(name_database), filename)) * 1.
+        image = plt.imread(os.path.join(self.full_url(name_database), filename)) * 1.
         if image.ndim == 3:
             image = image.sum(axis=2)
         return image, filename
@@ -251,19 +251,19 @@ class Image:
     def show_FT(self, FT, axis=False):#,, phase=0. do_complex=False
         N_X, N_Y = FT.shape
         image_temp = self.invert(FT)#, phase=phase)
-        import pylab
+        import matplotlib.pyplot as plt
 #         origin : [‘upper’ | ‘lower’], optional, default: None
 #         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
 #         extent : scalars (left, right, bottom, top), optional, default: None
 #         Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
-        fig = pylab.figure(figsize=(12,6))
+        fig = plt.figure(figsize=(12,6))
         a1 = fig.add_subplot(121)
         a2 = fig.add_subplot(122)
-        a1.imshow(np.absolute(FT), cmap=pylab.cm.hsv, origin='upper')
-        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=pylab.cm.gray, origin='upper')
+        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, origin='upper')
+        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, origin='upper')
         if not(axis):
-            pylab.setp(a1, xticks=[], yticks=[])
-            pylab.setp(a2, xticks=[], yticks=[])
+            plt.setp(a1, xticks=[], yticks=[])
+            plt.setp(a2, xticks=[], yticks=[])
         a1.axis([0, N_X, N_Y, 0])
         a2.axis([0, N_X, N_Y, 0])
         return fig, a1, a2
@@ -340,7 +340,7 @@ class Image:
         return np.exp(-(self.f/f_0)**alpha)
 
     def whitening_filt(self, size=(512, 512),
-                             name_database='Yelmo',
+                             name_database='serre07_distractors',
                              n_learning=400,
                              N=1.,
                              f_0=.8, alpha=1.4,
@@ -426,7 +426,7 @@ if __name__ == '__main__':
     Some examples of use for the class
 
     """
-    from pylab import imread
+    from plt import imread
     # whitening
     image = imread('database/gris512.png')[:,:,0]
 
