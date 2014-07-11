@@ -59,7 +59,7 @@ class Image:
             if not(os.path.isdir(path)): os.mkdir(path)
         X, Y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         R = np.sqrt(X**2 + Y**2)
-        self.mask = (np.cos(np.pi*R)+1)/2 *(R < 1.)
+        if self.pe.do_mask: self.mask = (np.cos(np.pi*R)+1)/2 *(R < 1.)
 
 
     def full_url(self, name_database):
@@ -108,15 +108,16 @@ class Image:
         """
 
         filelist = self.list_database(name_database)
+        N_image_db = len(filelist)
         if self.pe.N_image==None:
-            N_image = len(filelist)
+            N_image = N_image_db
         else:
             N_image = self.pe.N_image
-        shuffling = np.random.permutation(np.arange(len(filelist)))[:N_image]
+        shuffling = np.random.permutation(np.arange(N_image_db))
 
         imagelist = []
         for i_image in range(N_image):
-            image_, filename, croparea = self.patch(name_database, shuffling[i_image], verbose=verbose)
+            image_, filename, croparea = self.patch(name_database, shuffling[i_image % N_image_db], verbose=verbose)
             imagelist.append([filename, croparea])
 
         return imagelist
@@ -143,7 +144,7 @@ class Image:
 
         return imagelist
 
-    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True, mask=True):
+    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True):
         """
         takes a subimage of size s (a tuple)
 
@@ -176,7 +177,7 @@ class Image:
 
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
-        if mask: image_ *= self.mask
+        if self.pe.do_mask: image_ *= self.mask
         image_ -= image_.mean()
         return image_, filename, croparea
 
