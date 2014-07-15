@@ -31,7 +31,7 @@ class Image:
     Collects image processing routines for one given image size:
      - Some classical related to pure number crunching:
         - creating masks
-        - energy, normalize,
+        - normalize,
         - fourier_grid : defines a useful grid for generating filters in FFT
         - show_FT : displays the envelope and impulse response of a filter
         - convert / invert : go from one side to the other of the fourier transform
@@ -143,7 +143,7 @@ class Image:
 
         return imagelist
 
-    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True, mask=True):
+    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True):
         """
         takes a subimage of size s (a tuple)
 
@@ -166,7 +166,7 @@ class Image:
                 energy_ = 0
 
                 while energy_ < threshold*energy:
-                    #if energy_ > 0: print 'dropped patch'
+                    #if energy_ > 0: print 'dropped patch as its energy is too low compared to the energy in the whole image'
                     x_rand = int(np.ceil((image_size_h-self.N_X)*np.random.rand()))
                     y_rand = int(np.ceil((image_size_v-self.N_Y)*np.random.rand()))
                     image_ = image[(x_rand):(x_rand+self.N_X), (y_rand):(y_rand+self.N_Y)]
@@ -176,21 +176,17 @@ class Image:
 
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
-        if mask: image_ *= self.mask
-        image_ -= image_.mean()
+        if self.pe.do_mask: image_ *= self.mask
+        image_ = self.normalize(image_)
         return image_, filename, croparea
 
-    def energy(self, image):
-        #       see http://fseoane.net/blog/2011/computing-the-vector-norm/
-        return  np.mean(image.ravel()**2)
-
-    def normalize(self, image, center=True, use_max=True):
+    def normalize(self, image, center=True, use_max=False):
         image_ = image.copy()
-        if center: image_ -= np.mean(image_.ravel())
+        if center: image_ -= image_.mean()
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
         else:
-            if self.energy(image_)>0: image_ /= self.energy(image_)**.5
+            if image_.std()>0: image_ /= image_.std()
         return image_
 
     #### filter definition
@@ -310,7 +306,7 @@ class Image:
         from scipy.signal import correlate2d
         coco = correlate2d(image, filter_, mode='same')
         if normalize:
-            coco /= np.sqrt(self.energy(image)*self.energy(filter_))
+            coco /= np.sqrt(image.std()*filter_.std())
 #
         return coco
 

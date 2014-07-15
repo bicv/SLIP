@@ -1,6 +1,8 @@
 {
 # Image
 'N_X' : 256, # size of images
+'N_Y' : 256, # size of images
+'do_mask'  : False, # used in MAtching Pursuit self.pe.do_mask
 # Log-Gabor
 #'base_levels' : 2.,
 'base_levels' : 1.618,
