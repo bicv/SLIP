@@ -31,7 +31,7 @@ class Image:
     Collects image processing routines for one given image size:
      - Some classical related to pure number crunching:
         - creating masks
-        - energy, normalize,
+        - normalize,
         - fourier_grid : defines a useful grid for generating filters in FFT
         - show_FT : displays the envelope and impulse response of a filter
         - convert / invert : go from one side to the other of the fourier transform
@@ -163,7 +163,7 @@ class Image:
             elif self.N_X == image_size_h or self.N_Y == image_size_v:
                 return image, filename, [0, self.N_X, 0, self.N_Y]
             else:
-                energy = image[:].std()
+                energy = image.std()
                 energy_ = 0
 
                 while energy_ < threshold*energy:
@@ -187,7 +187,7 @@ class Image:
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
         else:
-            if self.energy(image_)>0: image_ /= self.energy(image_)**.5
+            if image_.std()>0: image_ /= image_.std() # self.energy(image_)**.5
         return image_
 
     #### filter definition
@@ -299,18 +299,18 @@ class Image:
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
 #
-    def coco(self, image, filter_, normalize=True):
-        """
-        Returns the correlation coefficient
-#
-        """
-        from scipy.signal import correlate2d
-        coco = correlate2d(image, filter_, mode='same')
-        if normalize:
-            coco /= np.sqrt(self.energy(image)*self.energy(filter_))
-#
-        return coco
-
+#     def coco(self, image, filter_, normalize=True):
+#         """
+#         Returns the correlation coefficient
+# #
+#         """
+#         from scipy.signal import correlate2d
+#         coco = correlate2d(image, filter_, mode='same')
+#         if normalize:
+#             coco /= np.sqrt(self.energy(image)*self.energy(filter_))
+# #
+#         return coco
+# 
     def olshausen_whitening_filt(self, f_0=.2, alpha=1.4, N=0.01):
         """
         Returns the whitening filter used by (Olshausen, 98)
