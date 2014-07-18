@@ -107,15 +107,17 @@ class Image:
         """
 
         filelist = self.list_database(name_database)
+        N_image_db = len(filelist)
         if self.pe.N_image==None:
             N_image = len(filelist)
         else:
             N_image = self.pe.N_image
+
         shuffling = np.random.permutation(np.arange(len(filelist)))[:N_image]
 
         imagelist = []
         for i_image in range(N_image):
-            image_, filename, croparea = self.patch(name_database, shuffling[i_image], verbose=verbose)
+            image_, filename, croparea = self.patch(name_database, shuffling[i_image % N_image_db], verbose=verbose)
             imagelist.append([filename, croparea])
 
         return imagelist
