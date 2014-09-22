@@ -336,13 +336,14 @@ class Image:
         """
         return np.exp(-(self.f/f_0)**alpha)
 
-    def whitening_filt(self, size=(512, 512),
-                             name_database='serre07_distractors',
+    def whitening_filt(self, #size=(512, 512),
+                             name_database='Yelmo',
                              n_learning=400,
                              N=1.,
                              f_0=.8, alpha=1.4,
                              N_0=.5,
-                             recompute=False):
+                             recompute=False,
+                             learn=False):
         """
         Returns the average correlation filter in FT space.
 
@@ -350,41 +351,40 @@ class Image:
         is given for instance by (Attick, 92).
 
         """
-        try:
-            K = np.load('white'+ str(size[0]) + '-' + str(size[1]) + '.npy')
-            if recompute:
-                print('Recomputing the whitening filter')
-                boing
-        except:
-            print ' Learning the whitening filter'
-            power_spectrum = 0. # power spectrum
-            for i_learning in range(n_learning):
-                image, filename, croparea = self.patch(name_database, verbose=False)
-                image = self.normalize(image) #TODO : is this fine?
-                power_spectrum += np.abs(fft2(image))**2
+        if learn:
+            size = [self.N_X, self.N_Y]
+            try:
+                K = np.load('white'+ str(size[0]) + '-' + str(size[1]) + '.npy')
+                if recompute:
+                    print('Recomputing the whitening filter')
+                    boing
+            except:
+                print ' Learning the whitening filter'
+                power_spectrum = 0. # power spectrum
+                for i_learning in range(n_learning):
+                    image, filename, croparea = self.patch(name_database, verbose=False)
+                    image = self.normalize(image) #TODO : is this fine?
+                    power_spectrum += np.abs(fft2(image))**2
 
-            power_spectrum = fftshift(power_spectrum)
-            power_spectrum /= np.mean(power_spectrum)
+                power_spectrum = fftshift(power_spectrum)
+                power_spectrum /= np.mean(power_spectrum)
 
-            # formula from Atick:
-            M = np.sqrt(power_spectrum / (N**2 + power_spectrum)) * self.low_pass(f_0=f_0, alpha=alpha)
-            K = M / np.sqrt(M**2 * (N**2 + power_spectrum) + N_0**2)
-     #       K = 1 / np.sqrt( N**2 + power_spectrum)  * low_pass(f_0 = f_0, alpha = alpha)
-            K /= np.max(K) # normalize energy :  DC is one <=> xcorr(0) = 1
+                # formula from Atick:
+                M = np.sqrt(power_spectrum / (N**2 + power_spectrum)) * self.low_pass(f_0=f_0, alpha=alpha)
+                K = M / np.sqrt(M**2 * (N**2 + power_spectrum) + N_0**2)
+         #       K = 1 / np.sqrt( N**2 + power_spectrum)  * low_pass(f_0 = f_0, alpha = alpha)
+                K /= np.max(K) # normalize energy :  DC is one <=> xcorr(0) = 1
 
-            np.save('white'+ str(size[0]) + '-' + str(size[1]) + '.npy', K)
-
+                np.save('white'+ str(size[0]) + '-' + str(size[1]) + '.npy', K)
+        else:
+            K = self.olshausen_whitening_filt(f_0=f_0, alpha=alpha, N=N)
         return K
 
     def whitening(self, image):
         """
         Returns the whitened image
         """
-        K = self.whitening_filt(size=image.shape, recompute=False)
-
-        if not(K.shape == image.shape):
-            K = self.whitening_filt(size=image.shape, recompute=True)
-
+        K = self.whitening_filt()
         return self.FTfilter(image, K)
 
     def dewhitening(self, white):
@@ -392,8 +392,7 @@ class Image:
         Returns the dewhitened image
 
         """
-        K = self.whitening_filt(white.shape)
-
+        K = self.whitening_filt()
         return self.FTfilter(white, 1./K)
 
 
