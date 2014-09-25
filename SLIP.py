@@ -48,7 +48,7 @@ class Image:
         """
         self.pe = pe
         self.N_X = pe.N_X # n_x
-        self.N_Y = pe.N_X # n_y
+        self.N_Y = pe.N_Y # n_y
 #        self.name_database = name_database
         if self.N_X%2 or self.N_Y%2: print('having images of uneven dimensions will fail')
 
