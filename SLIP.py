@@ -60,7 +60,7 @@ class Image:
         X, Y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         R = np.sqrt(X**2 + Y**2)
         self.mask = (np.cos(np.pi*R)+1)/2 *(R < 1.)
-
+        
 
     def full_url(self, name_database):
         import os
@@ -85,6 +85,7 @@ class Image:
 
         """
         filelist = self.list_database(name_database=name_database)
+        np.random.seed(seed=self.pe.seed)
 
         if filename is None:
             if i_image is None:
@@ -113,11 +114,12 @@ class Image:
         else:
             N_image = self.pe.N_image
 
+        np.random.seed(seed=self.pe.seed)
         shuffling = np.random.permutation(np.arange(len(filelist)))[:N_image]
 
         imagelist = []
         for i_image in range(N_image):
-            image_, filename, croparea = self.patch(name_database, shuffling[i_image % N_image_db], verbose=verbose)
+            image_, filename, croparea = self.patch(name_database, i_image=shuffling[i_image % N_image_db], verbose=verbose)
             imagelist.append([filename, croparea])
 
         return imagelist
@@ -155,6 +157,7 @@ class Image:
 #             image, filename = self.load_in_database(name_database, filename=filename, verbose=verbose)
 #         else:
         image, filename = self.load_in_database(name_database, i_image=i_image, filename=filename, verbose=verbose)
+        if not i_image==None and not self.pe.seed==None: np.random.seed(seed=self.pe.seed + i_image)
 
         if (croparea is None):
             image_size_h, image_size_v = image.shape
