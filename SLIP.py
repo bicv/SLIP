@@ -54,13 +54,13 @@ class Image:
 
         self.f_x, self.f_y = self.fourier_grid()
         self.f = self.frequency_radius()
+        self.f_theta = self.frequency_angle()
 
-        for path in self.pe.figpath, self.pe.matpath, self.pe.edgefigpath, self.pe.edgematpath:
+        for path in self.pe.figpath, self.pe.matpath:
             if not(os.path.isdir(path)): os.mkdir(path)
         X, Y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         R = np.sqrt(X**2 + Y**2)
         self.mask = (np.cos(np.pi*R)+1)/2 *(R < 1.)
-        
 
     def full_url(self, name_database):
         import os
@@ -146,7 +146,7 @@ class Image:
 
         return imagelist
 
-    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True):
+    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True, center=True, use_max=True):
         """
         takes a subimage of size s (a tuple)
 
@@ -181,7 +181,7 @@ class Image:
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
         if self.pe.do_mask: image_ *= self.mask
-        image_ = self.normalize(image_)
+        image_ = self.normalize(image_, center=center, use_max=use_max)
         return image_, filename, croparea
 
     def normalize(self, image, center=True, use_max=True):
@@ -247,6 +247,9 @@ class Image:
         R2 = self.f_x**2 + self.f_y**2
         R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
+
+    def frequency_angle(self):
+        return np.arctan2(self.f_y, self.f_x)
 
     def show_FT(self, FT, axis=False):#,, phase=0. do_complex=False
         N_X, N_Y = FT.shape
@@ -346,7 +349,7 @@ class Image:
                              f_0=.8, alpha=1.4,
                              N_0=.5,
                              recompute=False,
-                             learn=False):
+                             learn=True):
         """
         Returns the average correlation filter in FT space.
 
