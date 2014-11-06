@@ -320,17 +320,17 @@ class Image:
         """
         Returns the whitening filter used by (Olshausen, 98)
 
-        f_0 = 200 / 512 / 2 (?)
-
         /!\ you will have some problems at dewhitening without a low-pass
 
         """
-        K_ols = self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
-        K_ols *= (self.pe.N**2 + self.f**2)**.5
-        K_ols /= np.max(K_ols)
+        power_spectrum =  self.f**(-self.pe.alpha*2)
+        power_spectrum /= np.mean(power_spectrum)
+        K_ols = (self.pe.N_0**2 + power_spectrum)**-.5
+        K_ols *= self.low_pass(f_0=self.pe.f_0, steepness=self.pe.steepness)
+        K_ols /= np.mean(K_ols)
         return  K_ols
 
-    def low_pass(self, f_0, alpha):
+    def low_pass(self, f_0, steepness):
         """
         Returns the low_pass filter used by (Olshausen, 98)
 
@@ -338,8 +338,14 @@ class Image:
         f_0 = 22 c/deg in primates: the full image is approx 45 deg
         alpha makes the aspect change (1=diamond on the vert and hor, 2 = anisotropic)
 
+        from Olshausen 98 (p.11):
+        f_0  = 200 cycles / image (512 x 512 images)
+        in absolute coordiantes : f_0 = 200 / 512 / 2 (?)
+
+        steepness is to produce a "fairly sharp cutoff"
+
         """
-        return np.exp(-(self.f/f_0)**alpha)
+        return np.exp(-(self.f/f_0)**steepness)
 
     def whitening_filt(self):
         """
@@ -364,13 +370,14 @@ class Image:
                     power_spectrum += np.abs(fft2(image))**2
 
                 power_spectrum = fftshift(power_spectrum)
-                power_spectrum /= np.max(power_spectrum)
+                power_spectrum /= np.mean(power_spectrum)
 
                 # formula from Atick:
-#                 M = np.sqrt(power_spectrum / (self.pe.N**2 + power_spectrum)) * self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
+#                 M = np.sqrt(power_spectrum / (self.pe.N**2 + power_spectrum))# * self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
 #                 K = M / np.sqrt(M**2 * (self.pe.N**2 + power_spectrum) + self.pe.N_0**2)
-                K = 1 / np.sqrt(self.pe.N**2 + power_spectrum)  * self.low_pass(f_0 = self.pe.f_0, alpha = self.pe.alpha)
-                K /= np.max(K) # normalize energy :  DC is one <=> xcorr(0) = 1
+                K = (self.pe.N**2 + power_spectrum)**-.5
+                K *= self.low_pass(f_0 = self.pe.f_0, steepness = self.pe.steepness)
+                K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
 
                 np.save('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy', K)
         else:
