@@ -7,8 +7,7 @@ See http://pythonhosted.org/SLIP
 
 """
 import numpy as np
-import scipy.ndimage as nd
-from scipy.fftpack import fft2, fftshift, ifft2, ifftshift
+from numpy.fft import fft2, fftshift, ifft2, ifftshift
 import os
 PID, HOST = os.getpid(), os.uname()[1]
 TAG = 'host-' + HOST + '_pid-' + str(PID)
@@ -317,7 +316,7 @@ class Image:
 # #
 #         return coco
 # 
-    def olshausen_whitening_filt(self, f_0=.2, alpha=1.4, N=0.01):
+    def olshausen_whitening_filt(self):
         """
         Returns the whitening filter used by (Olshausen, 98)
 
@@ -326,8 +325,8 @@ class Image:
         /!\ you will have some problems at dewhitening without a low-pass
 
         """
-        K_ols = self.low_pass(f_0=f_0, alpha=alpha)
-        K_ols *= (N**2 + self.f**2)**.5
+        K_ols = self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
+        K_ols *= (self.pe.N**2 + self.f**2)**.5
         K_ols /= np.max(K_ols)
         return  K_ols
 
@@ -342,14 +341,7 @@ class Image:
         """
         return np.exp(-(self.f/f_0)**alpha)
 
-    def whitening_filt(self, #size=(512, 512),
-                             name_database='Yelmo',
-                             n_learning=400,
-                             N=1.,
-                             f_0=.8, alpha=1.4,
-                             N_0=.5,
-                             recompute=False,
-                             learn=True):
+    def whitening_filt(self):
         """
         Returns the average correlation filter in FT space.
 
@@ -357,33 +349,32 @@ class Image:
         is given for instance by (Attick, 92).
 
         """
-        if learn:
-            size = [self.N_X, self.N_Y]
+        if self.pe.learn:
             try:
-                K = np.load('white'+ str(size[0]) + '-' + str(size[1]) + '.npy')
-                if recompute:
+                K = np.load('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy')
+                if self.pe.recompute:
                     print('Recomputing the whitening filter')
                     boing
             except:
                 print ' Learning the whitening filter'
                 power_spectrum = 0. # power spectrum
-                for i_learning in range(n_learning):
-                    image, filename, croparea = self.patch(name_database, verbose=False)
-                    image = self.normalize(image) #TODO : is this fine?
+                for i_learning in range(self.pe.n_learning):
+                    image, filename, croparea = self.patch(self.pe.name_database, verbose=False)
+                    #image = self.normalize(image) #TODO : is this fine?
                     power_spectrum += np.abs(fft2(image))**2
 
                 power_spectrum = fftshift(power_spectrum)
-                power_spectrum /= np.mean(power_spectrum)
+                power_spectrum /= np.max(power_spectrum)
 
                 # formula from Atick:
-                M = np.sqrt(power_spectrum / (N**2 + power_spectrum)) * self.low_pass(f_0=f_0, alpha=alpha)
-                K = M / np.sqrt(M**2 * (N**2 + power_spectrum) + N_0**2)
-         #       K = 1 / np.sqrt( N**2 + power_spectrum)  * low_pass(f_0 = f_0, alpha = alpha)
+#                 M = np.sqrt(power_spectrum / (self.pe.N**2 + power_spectrum)) * self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
+#                 K = M / np.sqrt(M**2 * (self.pe.N**2 + power_spectrum) + self.pe.N_0**2)
+                K = 1 / np.sqrt(self.pe.N**2 + power_spectrum)  * self.low_pass(f_0 = self.pe.f_0, alpha = self.pe.alpha)
                 K /= np.max(K) # normalize energy :  DC is one <=> xcorr(0) = 1
 
-                np.save('white'+ str(size[0]) + '-' + str(size[1]) + '.npy', K)
+                np.save('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy', K)
         else:
-            K = self.olshausen_whitening_filt(f_0=f_0, alpha=alpha, N=N)
+            K = self.olshausen_whitening_filt()
         return K
 
     def whitening(self, image):
@@ -405,7 +396,6 @@ class Image:
     def retina(self, image):
         """
         A dummy retina processsing
-
 
         """
 
