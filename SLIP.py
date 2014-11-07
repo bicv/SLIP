@@ -57,10 +57,11 @@ class Image:
 
         for path in self.pe.figpath, self.pe.matpath:
             if not(os.path.isdir(path)): os.mkdir(path)
-        X, Y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
-        R = np.sqrt(X**2 + Y**2)
-        self.mask = (np.cos(np.pi*R)+1)/2 *(R < 1.)
-
+        self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
+        self.R = np.sqrt(self.x**2 + self.y**2)
+        self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
+        self.X, self.Y  = np.meshgrid(np.arange(pe.N_X), np.arange(pe.N_Y))
+        
     def full_url(self, name_database):
         import os
         return os.path.join(self.pe.datapath, name_database)
@@ -304,18 +305,18 @@ class Image:
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
 #
-#     def coco(self, image, filter_, normalize=True):
-#         """
-#         Returns the correlation coefficient
-# #
-#         """
-#         from scipy.signal import correlate2d
-#         coco = correlate2d(image, filter_, mode='same')
-#         if normalize:
-#             coco /= np.sqrt(self.energy(image)*self.energy(filter_))
-# #
-#         return coco
-# 
+    def coco(self, image, filter_, normalize=True):
+        """
+        Returns the correlation coefficient
+#
+        """
+        from scipy.signal import correlate2d
+        coco = correlate2d(image, filter_, mode='same')
+        if normalize:
+            coco /= np.sqrt(self.energy(image)*self.energy(filter_))
+#
+        return coco
+
     def olshausen_whitening_filt(self):
         """
         Returns the whitening filter used by (Olshausen, 98)

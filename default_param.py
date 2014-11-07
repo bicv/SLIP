@@ -12,10 +12,10 @@
 # whitening parameters:
 'name_database' : 'serre07_distractors',
 'n_learning' : 400,
-'N' : .6,
+'N' : .07,
 'N_0' : .0, # olshausen = 0.
 'f_0' : .4, # olshausen = 0.2
-'alpha' : 1.15,
+'alpha' : 1.4,
 'steepness' : 4.,
 'recompute' : False,
 'learn' : False,
