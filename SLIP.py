@@ -324,10 +324,10 @@ class Image:
         /!\ you will have some problems at dewhitening without a low-pass
 
         """
-        power_spectrum =  self.f**(-self.pe.alpha*2)
+        power_spectrum =  self.f**(-self.pe.white_alpha*2)
         power_spectrum /= np.mean(power_spectrum)
-        K_ols = (self.pe.N_0**2 + power_spectrum)**-.5
-        K_ols *= self.low_pass(f_0=self.pe.f_0, steepness=self.pe.steepness)
+        K_ols = (self.pe.white_N_0**2 + power_spectrum)**-.5
+        K_ols *= self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
         K_ols /= np.mean(K_ols)
         return  K_ols
 
@@ -374,10 +374,10 @@ class Image:
                 power_spectrum /= np.mean(power_spectrum)
 
                 # formula from Atick:
-#                 M = np.sqrt(power_spectrum / (self.pe.N**2 + power_spectrum))# * self.low_pass(f_0=self.pe.f_0, alpha=self.pe.alpha)
-#                 K = M / np.sqrt(M**2 * (self.pe.N**2 + power_spectrum) + self.pe.N_0**2)
-                K = (self.pe.N**2 + power_spectrum)**-.5
-                K *= self.low_pass(f_0 = self.pe.f_0, steepness = self.pe.steepness)
+#                 M = np.sqrt(power_spectrum / (self.pe.white_N**2 + power_spectrum))# * self.low_pass(f_0=self.pe.white_f_0, alpha=self.pe.white_alpha)
+#                 K = M / np.sqrt(M**2 * (self.pe.white_N**2 + power_spectrum) + self.pe.white_N_0**2)
+                K = (self.pe.white_N**2 + power_spectrum)**-.5
+                K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
 
                 np.save('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy', K)
