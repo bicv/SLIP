@@ -356,7 +356,7 @@ class Image:
         is given for instance by (Attick, 92).
 
         """
-        if self.pe.learn:
+        if self.pe.white_learn:
             try:
                 K = np.load('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy')
                 if self.pe.recompute:
