@@ -55,13 +55,15 @@ class Image:
         self.f = self.frequency_radius()
         self.f_theta = self.frequency_angle()
 
-        for path in self.pe.figpath, self.pe.matpath:
-            if not(os.path.isdir(path)): os.mkdir(path)
         self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
         self.X, self.Y  = np.meshgrid(np.arange(pe.N_X), np.arange(pe.N_Y))
-        
+
+    def mkdir(self):
+        for path in self.pe.figpath, self.pe.matpath:
+            if not(os.path.isdir(path)): os.mkdir(path)
+
     def full_url(self, name_database):
         import os
         return os.path.join(self.pe.datapath, name_database)
@@ -125,6 +127,7 @@ class Image:
         return imagelist
 
     def get_imagelist(self, exp, name_database='natural'):
+        self.mkdir()
         matname = os.path.join(self.pe.matpath, exp + '_' + name_database)
         try:
             imagelist = pickle.load( open(matname + '_images.pickle', "rb" ) )
