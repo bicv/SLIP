@@ -18,5 +18,4 @@
 'white_alpha' : 1.4,
 'white_steepness' : 4.,
 'white_recompute' : False,
-'white_learn' : False,
 }

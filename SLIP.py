@@ -48,8 +48,6 @@ class Image:
         self.pe = pe
         self.N_X = pe.N_X # n_x
         self.N_Y = pe.N_Y # n_y
-#        self.name_database = name_database
-        if self.N_X%2 or self.N_Y%2: print('having images of uneven dimensions will fail')
 
         self.f_x, self.f_y = self.fourier_grid()
         self.f = self.frequency_radius()
@@ -359,12 +357,11 @@ class Image:
         is given for instance by (Attick, 92).
 
         """
-        if self.pe.white_learn:
+        if self.pe.white_n_learning>0:
             try:
                 K = np.load('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy')
                 if self.pe.recompute:
-                    print('Recomputing the whitening filter')
-                    boing
+                    raise('Recomputing the whitening filter')
             except:
                 print ' Learning the whitening filter'
                 power_spectrum = 0. # power spectrum
