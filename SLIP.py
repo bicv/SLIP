@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 import time
 
 import logging
-logging.basicConfig(filename='log-SLIP-debug.log', format='%(asctime)s@[' + TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
+logging.basicConfig(filename='debug.log', format='%(asctime)s@[' + TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
 log = logging.getLogger("SLIP")
 #log.setLevel(level=logging.WARN)
 log.setLevel(level=logging.INFO)
@@ -365,7 +365,7 @@ class Image:
             except:
                 print ' Learning the whitening filter'
                 power_spectrum = 0. # power spectrum
-                for i_learning in range(self.pe.n_learning):
+                for i_learning in range(self.pe.white_n_learning):
                     image, filename, croparea = self.patch(self.pe.name_database, verbose=False)
                     #image = self.normalize(image) #TODO : is this fine?
                     power_spectrum += np.abs(fft2(image))**2
