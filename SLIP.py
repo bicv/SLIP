@@ -384,7 +384,10 @@ class Image:
         """
         K = self.whitening_filt()
         K[K<threshold*K.max()] = 1. # avoid DC component + corners for which gain is almost null
-        return self.FTfilter(white, 1./K)
+        FT_image = fftshift(fft2(white)) / K
+        FT_image[K<threshold*K.max()] = 0.
+        return self.invert(FT_image, full=full)
+
 
     def retina(self, image):
         """
