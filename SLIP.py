@@ -272,17 +272,14 @@ class Image:
         a2.axis([0, N_X, N_Y, 0])
         return fig, a1, a2
 
-    def convert(self, image):
-        return fftshift(fft2(image))
-
-    def invert(self, FT_image, full=False):#, phase=np.pi/2):
+    def invert(self, FT_image, full=False):
         if full:
-            return ifft2(ifftshift(FT_image)) # *np.exp(1j*phase)
+            return ifft2(ifftshift(FT_image))
         else:
             return ifft2(ifftshift(FT_image)).real
 
     def FTfilter(self, image, FT_filter, full=False):
-        FT_image = self.convert(image) * FT_filter
+        FT_image = fftshift(fft2(image)) * FT_filter
         return self.invert(FT_image, full=full)
 
     def trans(self, u, v):
@@ -305,18 +302,6 @@ class Image:
 
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
-#
-    def coco(self, image, filter_, normalize=True):
-        """
-        Returns the correlation coefficient
-#
-        """
-        from scipy.signal import correlate2d
-        coco = correlate2d(image, filter_, mode='same')
-        if normalize:
-            coco /= np.sqrt(self.energy(image)*self.energy(filter_))
-#
-        return coco
 
     def olshausen_whitening_filt(self):
         """
@@ -392,15 +377,14 @@ class Image:
         K = self.whitening_filt()
         return self.FTfilter(image, K)
 
-    def dewhitening(self, white):
+    def dewhitening(self, white, threshold=0.001):
         """
         Returns the dewhitened image
 
         """
         K = self.whitening_filt()
-        K[K==0.] = 1. # avoid DC component for which gain is null
+        K[K<threshold*K.max()] = 1. # avoid DC component + corners for which gain is almost null
         return self.FTfilter(white, 1./K)
-
 
     def retina(self, image):
         """
@@ -412,7 +396,6 @@ class Image:
         white = self.whitening(image)
         white = self.normalize(white) # mean = 0, std = 1
         return white
-
 
 def _test():
     import doctest
