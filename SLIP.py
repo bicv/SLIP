@@ -398,6 +398,7 @@ class Image:
 
         """
         K = self.whitening_filt()
+        K[K==0.] = 1. # avoid DC component for which gain is null
         return self.FTfilter(white, 1./K)
 
 
