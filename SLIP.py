@@ -186,7 +186,7 @@ class Image:
         return image_, filename, croparea
 
     def normalize(self, image, center=True, use_max=True):
-        image_ = image.copy()
+        image_ = image.copy()*1.
         if center: image_ -= image_.mean()
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
