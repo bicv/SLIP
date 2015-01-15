@@ -263,13 +263,15 @@ class Image:
         fig = plt.figure(figsize=(12,6))
         a1 = fig.add_subplot(121)
         a2 = fig.add_subplot(122)
-        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, origin='upper')
-        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, origin='upper')
+        opts= {'extent': (0, N_Y, N_X, 0), 
+               'interpolation':'nearest', 'origin':'upper'}
+        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, **opts)
+        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, **opts)
         if not(axis):
             plt.setp(a1, xticks=[], yticks=[])
             plt.setp(a2, xticks=[], yticks=[])
-        a1.axis([0, N_X, N_Y, 0])
-        a2.axis([0, N_X, N_Y, 0])
+        a1.axis([0, N_Y, N_X, 0])
+        a2.axis([0, N_Y, N_X, 0])
         return fig, a1, a2
 
     def invert(self, FT_image, full=False):
