@@ -390,7 +390,7 @@ class Image:
         FT_image[K<threshold*K.max()] = 0.
         return self.invert(FT_image, full=False)
 
-z
+
     def retina(self, image):
         """
         A dummy retina processsing
