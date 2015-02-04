@@ -263,7 +263,7 @@ class Image:
         fig = plt.figure(figsize=(12,6))
         a1 = fig.add_subplot(121)
         a2 = fig.add_subplot(122)
-        opts= {'extent': (0, N_Y, N_X, 0), 
+        opts= {'extent': (0, N_Y, N_X, 0),
                'interpolation':'nearest', 'origin':'upper'}
         a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, **opts)
         a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, **opts)
@@ -386,10 +386,11 @@ class Image:
         """
         K = self.whitening_filt()
         K[K==0] = 1.e12 # avoid DC component + corners for which gain is almost null
-        FT_image = fftshift(fft2(white)) / K
+        FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.steepness)
         FT_image[K<threshold*K.max()] = 0.
         return self.invert(FT_image, full=False)
 
+z
     def retina(self, image):
         """
         A dummy retina processsing
