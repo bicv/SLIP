@@ -364,7 +364,7 @@ class Image:
 #                 M = np.sqrt(power_spectrum / (self.pe.white_N**2 + power_spectrum))# * self.low_pass(f_0=self.pe.white_f_0, alpha=self.pe.white_alpha)
 #                 K = M / np.sqrt(M**2 * (self.pe.white_N**2 + power_spectrum) + self.pe.white_N_0**2)
                 K = (self.pe.white_N**2 + power_spectrum)**-.5
-                K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.steepness)
+                K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.white_steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
 
                 np.save('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy', K)
@@ -386,10 +386,9 @@ class Image:
         """
         K = self.whitening_filt()
         K[K==0] = 1.e12 # avoid DC component + corners for which gain is almost null
-        FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.steepness)
+        FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
         FT_image[K<threshold*K.max()] = 0.
         return self.invert(FT_image, full=False)
-
 
     def retina(self, image):
         """
