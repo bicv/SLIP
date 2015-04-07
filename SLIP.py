@@ -28,12 +28,13 @@ import matplotlib.pyplot as plt
 class Image:
     """
     Collects image processing routines for one given image size:
-     - Some classical related to pure number crunching:
+     - Some classical related to pure Fourier number crunching:
         - creating masks
         - normalize,
         - fourier_grid : defines a useful grid for generating filters in FFT
         - show_FT : displays the envelope and impulse response of a filter
-        - convert / invert : go from one side to the other of the fourier transform
+        - invert : go to the other of the fourier transform
+    - Some usual application of Fourier filtering:
         - trans : translation filter in Fourier space
         - whitening procedures
      - Some related to handling experiments:
@@ -45,6 +46,7 @@ class Image:
         initializes the Image class
 
         """
+        # TODO detect if pe is a Parameter object, a dictionary or a filename (of a dict or of an image)
         self.pe = pe
         self.N_X = pe.N_X # n_x
         self.N_Y = pe.N_Y # n_y
@@ -93,7 +95,7 @@ class Image:
             else:
                 i_image = i_image % len(filelist)
 
-            if verbose: print 'Using image ', filelist[i_image]
+            if verbose: print('Using image ', filelist[i_image])
             filename = filelist[i_image]
 
         import os
@@ -129,7 +131,7 @@ class Image:
         matname = os.path.join(self.pe.matpath, exp + '_' + name_database)
         try:
             imagelist = pickle.load( open(matname + '_images.pickle', "rb" ) )
-        except Exception, e:
+        except Exception as e:
             # todo : allow to make a bigger batch from a previous run - needs us to parse imagelist... or just concatenate old data...
             log.info('There is no imagelist, creating one: %s ', e)
             if not(os.path.isfile(matname + '_images_lock')):
@@ -139,7 +141,7 @@ class Image:
                 pickle.dump(imagelist, open( matname + '_images.pickle', "wb" ) )
                 try:
                     os.remove(matname + '_images_lock')
-                except Exception, e:
+                except Exception as e:
                     log.error('Failed to remove lock file %s_images_lock, error : %s ', matname, e)
             else:
                 log.warn(' Some process is building the imagelist %s_images.pickle', matname)
@@ -177,7 +179,7 @@ class Image:
                     image_ = image[(x_rand):(x_rand+self.N_X), (y_rand):(y_rand+self.N_Y)]
                     energy_ = image_[:].std()
 
-                if verbose: print 'Cropping @ [l,r,b,t]: ', [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
+                if verbose: print('Cropping @ [left, right, bottom, top]: ', [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y])
 
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
@@ -263,15 +265,13 @@ class Image:
         fig = plt.figure(figsize=(12,6))
         a1 = fig.add_subplot(121)
         a2 = fig.add_subplot(122)
-        opts= {'extent': (0, N_Y, N_X, 0),
-               'interpolation':'nearest', 'origin':'upper'}
-        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, **opts)
-        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, **opts)
+        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, origin='upper')
+        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, origin='upper')
         if not(axis):
             plt.setp(a1, xticks=[], yticks=[])
             plt.setp(a2, xticks=[], yticks=[])
-        a1.axis([0, N_Y, N_X, 0])
-        a2.axis([0, N_Y, N_X, 0])
+        a1.axis([0, N_X, N_Y, 0])
+        a2.axis([0, N_X, N_Y, 0])
         return fig, a1, a2
 
     def invert(self, FT_image, full=False):
@@ -350,7 +350,7 @@ class Image:
                 if self.pe.recompute:
                     raise('Recomputing the whitening filter')
             except:
-                print ' Learning the whitening filter'
+                print(' Learning the whitening filter')
                 power_spectrum = 0. # power spectrum
                 for i_learning in range(self.pe.white_n_learning):
                     image, filename, croparea = self.patch(self.pe.name_database, verbose=False)

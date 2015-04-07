@@ -1,4 +1,4 @@
-from SLIP import Image
+from .SLIP import Image
 
 __author__ = "(c) Laurent Perrinet INT - CNRS"
 def init_pylab():
