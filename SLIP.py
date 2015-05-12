@@ -79,7 +79,7 @@ class Image:
         except:
             print('failed opening database ', name_database)
             print('failed opening database ',  self.full_url(name_database))
-            return 'Failed to laod directory'
+            return 'Failed to load directory'
 
     def load_in_database(self, name_database, i_image=None, filename=None, verbose=True):
         """
@@ -385,10 +385,13 @@ class Image:
 
         """
         K = self.whitening_filt()
-        K[K==0] = 1.e12 # avoid DC component + corners for which gain is almost null
-        FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
-        FT_image[K<threshold*K.max()] = 0.
-        return self.invert(FT_image, full=False)
+        if threshold ==0:
+            return self.FTfilter(image, 1./K)
+        else:
+            K[K==0] = 1.e12 # avoid DC component + corners for which gain is almost null
+            FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
+            FT_image[K<threshold*K.max()] = 0.
+            return self.invert(FT_image, full=False)
 
     def retina(self, image):
         """
@@ -400,6 +403,7 @@ class Image:
         white = self.whitening(image)
         white = self.normalize(white) # mean = 0, std = 1
         return white
+
 
 def _test():
     import doctest
