@@ -45,17 +45,29 @@ class Image:
     """
     def __init__(self, pe={'N_X':128, 'N_Y':128}):
         """
-        initializes the Image class
+        Initializes the Image class
+
+        May take as input:
+
+        - a dictionary containing parameters 
+        - a string pointing to  a file or URL containing a dictionary of parameters 
+        - a ``NeuroTools.parameters.ParameterSet`` object containing parameters 
+
+        Parameters are 
+
+        - N_X and N_Y which are respectively the number of pixels in the vertical and horizontal dimensions respectively (MANDATORY)
+        - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
-        # TODO detect if pe is a Parameter object, a dictionary or a filename (of a dict or of an image)
         if type(pe) is dict or type(pe) is str:
             pe = ParameterSet(pe)
 
         self.pe = pe
         self.N_X = pe.N_X # n_x
         self.N_Y = pe.N_Y # n_y
+        self.init()
 
+    def init(self):
         self.f_x, self.f_y = self.fourier_grid()
         self.f = self.frequency_radius()
         self.f_theta = self.frequency_angle()
@@ -63,7 +75,7 @@ class Image:
         self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
-        self.X, self.Y  = np.meshgrid(np.arange(pe.N_X), np.arange(pe.N_Y))
+        self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
     def mkdir(self):
         for path in self.pe.figpath, self.pe.matpath:
@@ -111,7 +123,11 @@ class Image:
 
     def make_imagelist(self, name_database, verbose=False):
         """
-        makes a list of images with no repetition.
+        Makes a list of images with no repetition.
+
+        Takes as an input the name of a database (the name of a folder in the `datapath``),
+        returns a list of the filenames along with the crop area.
+
         """
 
         filelist = self.list_database(name_database)
@@ -132,6 +148,13 @@ class Image:
         return imagelist
 
     def get_imagelist(self, exp, name_database='natural'):
+        """
+        returns an imagelist from a pickled database.
+
+        If the stored imagelist does not exist, creates it.
+        The ``exp`` sting allows to tag the list to a particular experiment.
+
+        """
         self.mkdir()
         matname = os.path.join(self.pe.matpath, exp + '_' + name_database)
         try:
@@ -141,7 +164,7 @@ class Image:
             log.info('There is no imagelist, creating one: %s ', e)
             if not(os.path.isfile(matname + '_images_lock')):
                 log.info(' > setting up image list for %s ', name_database)
-                file(matname + '_images_lock', 'w').close()
+                open(matname + '_images_lock', 'w').close()
                 imagelist = self.make_imagelist(name_database=name_database)
                 pickle.dump(imagelist, open( matname + '_images.pickle', "wb" ) )
                 try:
@@ -286,6 +309,10 @@ class Image:
             return ifft2(ifftshift(FT_image)).real
 
     def FTfilter(self, image, FT_filter, full=False):
+        """
+        Using the ``FTfilter`` function, it is easy to filter an image with a filter defined in Fourier space.
+
+        """
         FT_image = fftshift(fft2(image)) * FT_filter
         return self.invert(FT_image, full=full)
 
