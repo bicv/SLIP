@@ -25,6 +25,8 @@ log.setLevel(level=logging.INFO)
 import pickle
 import matplotlib.pyplot as plt
 
+from NeuroTools.parameters import ParameterSet
+
 class Image:
     """
     Collects image processing routines for one given image size:
@@ -41,12 +43,15 @@ class Image:
         - load_in_database : loads a random image in a folder and
         - patch : takes a random patch of the correct size
     """
-    def __init__(self, pe):
+    def __init__(self, pe={'N_X':128, 'N_Y':128}):
         """
         initializes the Image class
 
         """
         # TODO detect if pe is a Parameter object, a dictionary or a filename (of a dict or of an image)
+        if type(pe) is dict or type(pe) is str:
+            pe = ParameterSet(pe)
+
         self.pe = pe
         self.N_X = pe.N_X # n_x
         self.N_Y = pe.N_Y # n_y
