@@ -9,7 +9,7 @@ version = "0.1"
 setup(
     name = NAME,
     version = version,
-    packages=find_packages('src', exclude='docs')
+    packages=find_packages('src', exclude='docs'),
     package_dir = {'': 'src'},
     author = "Laurent Perrinet INT - CNRS",
     author_email = "Laurent.Perrinet@univ-amu.fr",
