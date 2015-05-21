@@ -76,6 +76,8 @@ class Image:
         self.init_logging()
 
     def get_pe(self, pe):
+        if type(pe) is tuple:
+            return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
         if type(pe) is ParameterSet:
             return pe
         elif type(pe) is dict:
@@ -135,6 +137,7 @@ class Image:
         self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
+        self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
     def init_logging(self, filename='debug.log', name="SLIP"):
@@ -175,7 +178,7 @@ class Image:
             self.log.error('failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
-    def imread(self, URL):
+    def imread(self, URL, resize=True):
         try:
             image = imread(URL)
         except:
@@ -191,7 +194,7 @@ class Image:
                 self.log.error('imread : more than 4 channels, have you imported a video?')
             # TODO : RGB correction
             image = image.sum(axis=-1) # convert to grayscale
-        if self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]:
+        if resize and (self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]):
             self.set_size(image)
         return image
 
@@ -216,7 +219,7 @@ class Image:
             filename = filelist[i_image]
 
         import os
-        image = self.imread(os.path.join(self.full_url(name_database), filename))
+        image = self.imread(os.path.join(self.full_url(name_database), filename), resize=False)
         return image, filename
 
     def make_imagelist(self, name_database, verbose=False):
@@ -275,7 +278,8 @@ class Image:
 
         return imagelist
 
-    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True, center=True, use_max=True):
+    def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True,
+            preprocess=True, center=True, use_max=True):
         """
         takes a subimage of size s (a tuple)
 
@@ -310,6 +314,7 @@ class Image:
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
         if self.pe.do_mask: image_ *= self.mask
+        if preprocess: image_ = self.preprocess(image_)
         image_ = self.normalize(image_, center=center, use_max=use_max)
         return image_, filename, croparea
 
@@ -398,12 +403,23 @@ class Image:
         else:
             return ifft2(ifftshift(FT_image)).real
 
+    def fourier(self, image, full=True):
+        """
+        Using the ``fourierr`` function, it is easy to retieve its Fourier transformation.
+
+        """
+        FT = fftshift(fft2(image))
+        if full:
+            return FT
+        else:
+            return np.absolute(FT)
+
     def FTfilter(self, image, FT_filter, full=False):
         """
         Using the ``FTfilter`` function, it is easy to filter an image with a filter defined in Fourier space.
 
         """
-        FT_image = fftshift(fft2(image)) * FT_filter
+        FT_image = self.fourier(image, full=True) * FT_filter
         return self.invert(FT_image, full=full)
 
     def trans(self, u, v):
@@ -426,6 +442,26 @@ class Image:
 
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
+
+    def retina(self, df=.07, sigma=.02):
+        """
+        A parametric description of the envelope of retina processsing.
+
+        From raw pixelized images, we want to keep information that is relevent to the content of
+        the objects in the image. In particular, we want to avoid:
+
+            - information that would not be uniformly distributed when rotating the image. In
+            particular, we discard information outside the unit disk in Fourier space, in particular 
+            above the Nyquist frequency,
+            - information that relates to information of the order the size of the image. This
+            involves discarding information at low-level frequencies.
+
+        """
+        # removing high frequencies in the corners
+        env = (1-np.exp((self.f-.5)/(.5*df)))*(self.f<.5)
+        # removing low frequencies
+        env *= 1-np.exp(-.5*(self.f**2)/((.5*sigma)**2))
+        return env
 
     def olshausen_whitening_filt(self):
         """
@@ -458,15 +494,28 @@ class Image:
         """
         return np.exp(-(self.f/f_0)**steepness)
 
-    def whitening_filt(self):
+    def whitening_filt(self, struct=True):
         """
-        Returns the average correlation filter in FT space.
+        Returns the envelope of the whitening filter.
 
-        Computes the average power spectrum = FT of cross-correlation, the mean decorrelation
-        is given for instance by (Attick, 92).
+        if we chose one based on structural assumptions (``struct=True``)
+            then we return a 1/f spectrum based on the assumption that the structure of images
+            is self-similar and thus that the Fourier spectrum scales a priori in 1/f.
+
+        elif we chose to learn, 
+            returns theaverage correlation filter in FT space.
+
+            Computes the average power spectrum = FT of cross-correlation, the mean decorrelation
+            is given for instance by (Attick, 92).
+
+        else
+            we return the parametrization based on Olshausen, 1996
 
         """
-        if self.pe.white_n_learning>0:
+        if struct:
+            return self.f
+
+        elif self.pe.white_n_learning>0:
             try:
                 K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
                 if self.pe.recompute:
@@ -494,6 +543,13 @@ class Image:
             K = self.olshausen_whitening_filt()
         return K
 
+    def preprocess(self, image):
+        """
+        Returns the pre-processed image
+        """
+        return self.FTfilter(image, self.f_mask)
+
+
     def whitening(self, image):
         """
         Returns the whitened image
@@ -514,17 +570,6 @@ class Image:
             FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
             FT_image[K<threshold*K.max()] = 0.
             return self.invert(FT_image, full=False)
-
-    def retina(self, image):
-        """
-        A dummy retina processsing
-
-        """
-
-#        TODO: log-polar transform with openCV
-        white = self.whitening(image)
-        white = self.normalize(white) # mean = 0, std = 1
-        return white
 
 # plotting routines
 #         origin : [‘upper’ | ‘lower’], optional, default: None
@@ -547,23 +592,43 @@ class Image:
         ax.axis([0, self.N_X, self.N_Y, 0])
         return fig, ax
 
-    def show_FT(self, FT, fig=None, a1=None, a2=None, axis=False, norm=True,
+    def show_FT(self, FT_image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        N_X, N_Y = FT.shape
-        image_temp = self.invert(FT)#, phase=phase)
+        image_temp = self.invert(FT_image)#, phase=phase)
         if fig is None: fig = plt.figure(figsize=(12, 6))
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        if norm: FT /= np.absolute(FT).max()
-        fig , a1 = im.imshow(FT, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
-        fig , a2 = im.imshow(image_temp, fig=fig, ax=a2, norm=norm)
+        if norm: FT_image /= np.absolute(FT_image).max()
+        fig , a1 = self.imshow(FT_image, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
+        fig , a2 = self.imshow(image_temp, fig=fig, ax=a2, norm=norm)
+        if title:
+            plt.setp(a1, title='Spectrum')
+            plt.setp(a2, title='Image')
         if not(axis):
             plt.setp(a1, xticks=[], yticks=[])
             plt.setp(a2, xticks=[], yticks=[])
-        a1.axis([0, N_X, N_Y, 0])
-        a2.axis([0, N_X, N_Y, 0])
+        a1.axis([0, self.N_X, self.N_Y, 0])
+        a2.axis([0, self.N_X, self.N_Y, 0])
         return fig, a1, a2
 
+    def show_spectrum(self, image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        FT_image = self.fourier(image, full=False)
+        if fig is None: fig = plt.figure(figsize=(12, 6))
+        if a1 is None: a1 = fig.add_subplot(121)
+        if a2 is None: a2 = fig.add_subplot(122)
+        if norm: FT_image /= np.absolute(FT_image).max()
+        fig , a1 = self.imshow(FT_image, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
+        fig , a2 = self.imshow(image, fig=fig, ax=a2, norm=norm)
+        if title:
+            plt.setp(a1, title='Spectrum')
+            plt.setp(a2, title='Image')
+        if not(axis):
+            plt.setp(a1, xticks=[], yticks=[])
+            plt.setp(a2, xticks=[], yticks=[])
+        a1.axis([0, self.N_X, self.N_Y, 0])
+        a2.axis([0, self.N_X, self.N_Y, 0])
+        return fig, a1, a2
 
 def _test():
     import doctest
