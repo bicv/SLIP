@@ -7,7 +7,6 @@ See http://pythonhosted.org/SLIP
 """
 import numpy as np
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
-import imageio
 import os
 # -------------------------------------------
 import warnings
@@ -18,6 +17,10 @@ import pickle
 import matplotlib.pyplot as plt
 from NeuroTools.parameters import ParameterSet
 import logging
+
+def imread(URL):
+    import imageio
+    return np.array(imageio.imread(URL))
 
 class Image:
     """
@@ -63,7 +66,7 @@ class Image:
 
         """
         try: # to read pe as an image
-            pe = np.array(imageio.imread(pe))
+            pe = imread(pe)
         except:
             pass
 
@@ -101,7 +104,7 @@ class Image:
             self.N_X, self.N_Y = im
         except:
             try: # to read pe as an image
-                im = np.array(imageio.imread(im))
+                im = self.imread(im)
                 self.N_X, self.N_Y = im.shape[0], im.shape[1]
             except:
                 try: # to read as a ndarray
@@ -166,6 +169,9 @@ class Image:
             print('failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
+    def imread(self, URL):
+        return imread(URL)
+
     def load_in_database(self, name_database, i_image=None, filename=None, verbose=True):
         """
         Loads a random image from the database ``name_database``.
@@ -187,7 +193,7 @@ class Image:
             filename = filelist[i_image]
 
         import os
-        image = imageio.imread(os.path.join(self.full_url(name_database), filename)) * 1.
+        image = self.imread(os.path.join(self.full_url(name_database), filename))
         if image.ndim == 3:
             # TODO : RGB correction
             image = image.sum(axis=2)
