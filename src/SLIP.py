@@ -65,25 +65,38 @@ class Image:
         - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
-        try: # to read pe as an image
-            pe = imread(pe)
-        except:
-            pass
 
-        if type(pe) is np.ndarray:
-            pe = ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
-
-        if type(pe) is dict or type(pe) is str:
-            pe = ParameterSet(pe)
-
-        self.pe = pe
-        self.N_X = pe.N_X # n_x
-        self.N_Y = pe.N_Y # n_y
+        self.pe = self.get_pe(pe)
+        self.N_X = self.pe.N_X # n_x
+        self.N_Y = self.pe.N_Y # n_y
         self.init()
 
-        if not 'verbose' in pe.keys():
+        if not 'verbose' in self.pe.keys():
             self.pe.verbose = logging.WARN
         self.init_logging()
+
+    def get_pe(self, pe):
+        if type(pe) is ParameterSet:
+            return pe
+        elif type(pe) is dict:
+            return ParameterSet(pe)
+        elif type(pe) is np.ndarray:
+            return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
+        elif type(pe) is str:
+            try: # to read pe as an image
+                pe = imread(pe)
+                return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
+            except:
+               return ParameterSet(pe)
+        else:
+            self.log.error('could not guess what the init variable is')
+
+    def get_size(self, im):
+        if type(im) is tuple:
+            return im
+        elif type(im) is str:
+            im =  self.imread(im)
+        return im.shape[0], im.shape[1]
 
     def set_size(self, im):
         """
@@ -101,16 +114,9 @@ class Image:
 
         """
         try: # to read pe as a tuple
-            self.N_X, self.N_Y = im
+            self.N_X, self.N_Y = self.get_size(im)
         except:
-            try: # to read pe as an image
-                im = self.imread(im)
-                self.N_X, self.N_Y = im.shape[0], im.shape[1]
-            except:
-                try: # to read as a ndarray
-                    self.N_X, self.N_Y = im.shape[0], im.shape[1]
-                except:
-                    self.log.error('Could not set the size of the SLIP object') 
+            self.log.error('Could not set the size of the SLIP object') 
         self.pe.N_X = self.N_X # n_x
         self.pe.N_Y = self.N_Y # n_y
         self.init()
@@ -166,11 +172,28 @@ class Image:
                 if garbage in filelist: filelist.remove(garbage)
             return filelist
         except:
-            print('failed opening database ',  self.full_url(name_database))
+            self.log.error('failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
     def imread(self, URL):
-        return imread(URL)
+        try:
+            image = imread(URL)
+        except:
+            self.log.error('failed opening ', URL)
+
+
+        if image.ndim > 3:
+            self.log.error('dimension higher than 3')
+        if image.ndim == 3:
+            if image.shape[2]==4: # discard alpha channel
+                image = image[..., :3]
+            if image.shape[2] > 4:
+                self.log.error('imread : more than 4 channels, have you imported a video?')
+            # TODO : RGB correction
+            image = image.sum(axis=-1) # convert to grayscale
+        if self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]:
+            self.set_size(image)
+        return image
 
     def load_in_database(self, name_database, i_image=None, filename=None, verbose=True):
         """
@@ -194,9 +217,6 @@ class Image:
 
         import os
         image = self.imread(os.path.join(self.full_url(name_database), filename))
-        if image.ndim == 3:
-            # TODO : RGB correction
-            image = image.sum(axis=2)
         return image, filename
 
     def make_imagelist(self, name_database, verbose=False):
@@ -371,19 +391,37 @@ class Image:
     def frequency_angle(self):
         return np.arctan2(self.f_y, self.f_x)
 
-    def show_FT(self, FT, axis=False):#,, phase=0. do_complex=False
-        N_X, N_Y = FT.shape
-        image_temp = self.invert(FT)#, phase=phase)
-        import matplotlib.pyplot as plt
+# plotting routines
 #         origin : [‘upper’ | ‘lower’], optional, default: None
 #         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
 #         extent : scalars (left, right, bottom, top), optional, default: None
 #         Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
-        fig = plt.figure(figsize=(12,6))
-        a1 = fig.add_subplot(121)
-        a2 = fig.add_subplot(122)
-        a1.imshow(np.absolute(FT), cmap=plt.cm.hsv, origin='upper')
-        a2.imshow(image_temp/np.abs(image_temp).max(), vmin=-1, vmax=1, cmap=plt.cm.gray, origin='upper')
+    def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
+            xlabel='X axis', ylabel='Y axis', figsize=(8, 8),
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        if fig is None: fig = plt.figure(figsize=figsize)
+        if ax is None: ax = fig.add_subplot(111)
+        if norm: image = self.normalize(image, center=True, use_max=True)
+        ax.imshow(image, cmap=cmap, **opts)
+        if not(axis):
+            plt.setp(ax, xticks=[], yticks=[])
+        else:
+            ax.set_ylabel(xlabel)
+            ax.set_xlabel(ylabel)
+            #plt.colorbar()
+        ax.axis([0, self.N_X, self.N_Y, 0])
+        return fig, ax
+
+    def show_FT(self, FT, fig=None, a1=None, a2=None, axis=False, norm=True,
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        N_X, N_Y = FT.shape
+        image_temp = self.invert(FT)#, phase=phase)
+        if fig is None: fig = plt.figure(figsize=(12, 6))
+        if a1 is None: a1 = fig.add_subplot(121)
+        if a2 is None: a2 = fig.add_subplot(122)
+        if norm: FT /= np.absolute(FT).max()
+        fig , a1 = im.imshow(FT, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
+        fig , a2 = im.imshow(image_temp, fig=fig, ax=a2, norm=norm)
         if not(axis):
             plt.setp(a1, xticks=[], yticks=[])
             plt.setp(a2, xticks=[], yticks=[])
@@ -467,14 +505,14 @@ class Image:
         """
         if self.pe.white_n_learning>0:
             try:
-                K = np.load('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy')
+                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
                 if self.pe.recompute:
                     raise('Recomputing the whitening filter')
             except:
                 print(' Learning the whitening filter')
                 power_spectrum = 0. # power spectrum
                 for i_learning in range(self.pe.white_n_learning):
-                    image, filename, croparea = self.patch(self.pe.name_database, verbose=False)
+                    image, filename, croparea = self.patch(self.pe.white_name_database, verbose=False)
                     #image = self.normalize(image) #TODO : is this fine?
                     power_spectrum += np.abs(fft2(image))**2
 
@@ -487,8 +525,8 @@ class Image:
                 K = (self.pe.white_N**2 + power_spectrum)**-.5
                 K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.white_steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
-
-                np.save('white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy', K)
+                self.mkdir()
+                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'), K)
         else:
             K = self.olshausen_whitening_filt()
         return K
