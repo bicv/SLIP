@@ -51,6 +51,8 @@ class Image:
         May take as input:
 
         - a dictionary containing parameters 
+        - a ``ndarray`` (dimensions ``N_X`` and ``N_Y`` are guessed from this array)
+        - a string representing a file or URL pointing to an image file
         - a string pointing to  a file or URL containing a dictionary of parameters 
         - a ``NeuroTools.parameters.ParameterSet`` object containing parameters 
 
@@ -79,6 +81,36 @@ class Image:
         if not 'verbose' in pe.keys():
             self.pe.verbose = logging.WARN
         self.init_logging()
+
+    def set_size(self, im):
+        """
+        Re-initializes the Image class with  the size given in ``im``
+
+        May take as input:
+
+        - a numpy array,
+        - a string representing a file or URL pointing to an image file
+        - a tuple
+
+        Updated parameters are 
+
+        - N_X and N_Y which are respectively the number of pixels in the vertical and horizontal dimensions respectively (MANDATORY)
+
+        """
+        try: # to read pe as a tuple
+            self.N_X, self.N_Y = im
+        except:
+            try: # to read pe as an image
+                im = np.array(imageio.imread(im))
+                self.N_X, self.N_Y = im.shape[0], im.shape[1]
+            except:
+                try: # to read as a ndarray
+                    self.N_X, self.N_Y = im.shape[0], im.shape[1]
+                except:
+                    self.log.error('Could not set the size of the SLIP object') 
+        self.pe.N_X = self.N_X # n_x
+        self.pe.N_Y = self.N_Y # n_y
+        self.init()
 
     def init(self):
         """ 
