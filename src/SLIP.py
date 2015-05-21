@@ -377,6 +377,9 @@ class Image:
         R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
+    def frequency_angle(self):
+        return np.arctan2(self.f_y, self.f_x)
+
     def enveloppe_color(self, alpha):
         # 0.0, 1.0, 2.0 are resp. white, pink, red/brownian envelope
         # (see http://en.wikipedia.org/wiki/1/f_noise )
@@ -388,47 +391,7 @@ class Image:
             f_radius[(self.N_X-1)//2 + 1 , (self.N_Y-1)//2 + 1 ] = np.inf
             return 1. / f_radius
 
-    def frequency_angle(self):
-        return np.arctan2(self.f_y, self.f_x)
-
-# plotting routines
-#         origin : [‘upper’ | ‘lower’], optional, default: None
-#         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
-#         extent : scalars (left, right, bottom, top), optional, default: None
-#         Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
-    def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='X axis', ylabel='Y axis', figsize=(8, 8),
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        if fig is None: fig = plt.figure(figsize=figsize)
-        if ax is None: ax = fig.add_subplot(111)
-        if norm: image = self.normalize(image, center=True, use_max=True)
-        ax.imshow(image, cmap=cmap, **opts)
-        if not(axis):
-            plt.setp(ax, xticks=[], yticks=[])
-        else:
-            ax.set_ylabel(xlabel)
-            ax.set_xlabel(ylabel)
-            #plt.colorbar()
-        ax.axis([0, self.N_X, self.N_Y, 0])
-        return fig, ax
-
-    def show_FT(self, FT, fig=None, a1=None, a2=None, axis=False, norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        N_X, N_Y = FT.shape
-        image_temp = self.invert(FT)#, phase=phase)
-        if fig is None: fig = plt.figure(figsize=(12, 6))
-        if a1 is None: a1 = fig.add_subplot(121)
-        if a2 is None: a2 = fig.add_subplot(122)
-        if norm: FT /= np.absolute(FT).max()
-        fig , a1 = im.imshow(FT, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
-        fig , a2 = im.imshow(image_temp, fig=fig, ax=a2, norm=norm)
-        if not(axis):
-            plt.setp(a1, xticks=[], yticks=[])
-            plt.setp(a2, xticks=[], yticks=[])
-        a1.axis([0, N_X, N_Y, 0])
-        a2.axis([0, N_X, N_Y, 0])
-        return fig, a1, a2
-
+    # Fourier number crunching
     def invert(self, FT_image, full=False):
         if full:
             return ifft2(ifftshift(FT_image))
@@ -562,6 +525,44 @@ class Image:
         white = self.whitening(image)
         white = self.normalize(white) # mean = 0, std = 1
         return white
+
+# plotting routines
+#         origin : [‘upper’ | ‘lower’], optional, default: None
+#         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
+#         extent : scalars (left, right, bottom, top), optional, default: None
+#         Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
+    def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
+            xlabel='X axis', ylabel='Y axis', figsize=(8, 8),
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        if fig is None: fig = plt.figure(figsize=figsize)
+        if ax is None: ax = fig.add_subplot(111)
+        if norm: image = self.normalize(image, center=True, use_max=True)
+        ax.imshow(image, cmap=cmap, **opts)
+        if not(axis):
+            plt.setp(ax, xticks=[], yticks=[])
+        else:
+            ax.set_ylabel(xlabel)
+            ax.set_xlabel(ylabel)
+            #plt.colorbar()
+        ax.axis([0, self.N_X, self.N_Y, 0])
+        return fig, ax
+
+    def show_FT(self, FT, fig=None, a1=None, a2=None, axis=False, norm=True,
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        N_X, N_Y = FT.shape
+        image_temp = self.invert(FT)#, phase=phase)
+        if fig is None: fig = plt.figure(figsize=(12, 6))
+        if a1 is None: a1 = fig.add_subplot(121)
+        if a2 is None: a2 = fig.add_subplot(122)
+        if norm: FT /= np.absolute(FT).max()
+        fig , a1 = im.imshow(FT, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
+        fig , a2 = im.imshow(image_temp, fig=fig, ax=a2, norm=norm)
+        if not(axis):
+            plt.setp(a1, xticks=[], yticks=[])
+            plt.setp(a2, xticks=[], yticks=[])
+        a1.axis([0, N_X, N_Y, 0])
+        a2.axis([0, N_X, N_Y, 0])
+        return fig, a1, a2
 
 
 def _test():
