@@ -4,7 +4,6 @@ SLIP: a Simple Library for Image Processing.
 
 See http://pythonhosted.org/SLIP
 
-
 """
 import numpy as np
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
@@ -29,6 +28,15 @@ from NeuroTools.parameters import ParameterSet
 
 class Image:
     """
+    This library collects different Image Processing tools.
+
+    Fork me on https://github.com/meduz/SLIP !
+
+    This library is used in other projects, in particular  for use with the ``LogGabor`` and ``SparseEdges`` libraries
+    For more information check respective pages @ 
+        - http://pythonhosted.org/LogGabor and 
+        - http://pythonhosted.org/SparseEdges
+
     Collects image processing routines for one given image size:
      - Some classical related to pure Fourier number crunching:
         - creating masks
@@ -68,6 +76,12 @@ class Image:
         self.init()
 
     def init(self):
+        """ 
+        Initializes different convenient matrices for image processing.
+
+        To be called when keeping the same Image object but changing the size of the image.
+
+        """
         self.f_x, self.f_y = self.fourier_grid()
         self.f = self.frequency_radius()
         self.f_theta = self.frequency_angle()
@@ -78,6 +92,12 @@ class Image:
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
     def mkdir(self):
+        """ 
+        Initializes two folders for storing intermediate matrices and images.
+
+        To be called before any operation to store or retrieve a result or figure.
+
+        """
         for path in self.pe.figpath, self.pe.matpath:
             if not(os.path.isdir(path)): os.mkdir(path)
 
@@ -86,21 +106,27 @@ class Image:
         return os.path.join(self.pe.datapath, name_database)
 
     def list_database(self, name_database):
+        """
+        Returns a list of the files in a folder
+
+        """
         import os
         try:
+            # TODO: use a list of authorized file types
+            GARBAGE = ['.AppleDouble', '.DS_Store'] # MacOsX stuff
             filelist = os.listdir(self.full_url(name_database))
-            for garbage in ['.AppleDouble', '.DS_Store']:
-                if garbage in filelist:
-                    filelist.remove(garbage)
+            for garbage in GARBAGE: if garbage in filelist: filelist.remove(garbage)
             return filelist
         except:
-            print('failed opening database ', name_database)
             print('failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
     def load_in_database(self, name_database, i_image=None, filename=None, verbose=True):
         """
-        Loads a random image from directory name_database
+        Loads a random image from the database ``name_database``.
+
+        The strategy is to pick one image in the folder using the list provided by the ``list_database``function.
+
 
         """
         filelist = self.list_database(name_database=name_database)
@@ -116,8 +142,10 @@ class Image:
             filename = filelist[i_image]
 
         import os
+        # TODO: use imageio
         image = plt.imread(os.path.join(self.full_url(name_database), filename)) * 1.
         if image.ndim == 3:
+            # TODO : RGB correction
             image = image.sum(axis=2)
         return image, filename
 
