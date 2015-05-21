@@ -533,8 +533,6 @@ if __name__ == '__main__':
     Some examples of use for the class
 
     """
-    import imageio
-    # whitening
-    image = imageio.imread('database/gris512.png').sum(axis=-1)
+    im = Image('database/gris512.png')
     
 
