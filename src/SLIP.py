@@ -8,23 +8,15 @@ See http://pythonhosted.org/SLIP
 import numpy as np
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
 import os
-PID, HOST = os.getpid(), os.uname()[1]
-TAG = 'host-' + HOST + '_pid-' + str(PID)
 # -------------------------------------------
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 import time
 
-import logging
-logging.basicConfig(filename='debug.log', format='%(asctime)s@[' + TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
-log = logging.getLogger("SLIP")
-#log.setLevel(level=logging.WARN)
-log.setLevel(level=logging.INFO)
-# log.setLevel(logging.DEBUG) #set verbosity to show all messages of severity >= DEBUG
 import pickle
 import matplotlib.pyplot as plt
-
 from NeuroTools.parameters import ParameterSet
+import logging
 
 class Image:
     """
@@ -75,6 +67,10 @@ class Image:
         self.N_Y = pe.N_Y # n_y
         self.init()
 
+        if not 'verbose' in pe.keys():
+            self.pe.verbose = logging.WARN
+        self.init_logging()
+
     def init(self):
         """ 
         Initializes different convenient matrices for image processing.
@@ -90,6 +86,13 @@ class Image:
         self.R = np.sqrt(self.x**2 + self.y**2)
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
+
+    def init_logging(self, filename='debug.log', name="SLIP"):
+        PID, HOST = os.getpid(), os.uname()[1]
+        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
+        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
+        self.log = logging.getLogger(name)
+        self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def mkdir(self):
         """ 
@@ -115,7 +118,8 @@ class Image:
             # TODO: use a list of authorized file types
             GARBAGE = ['.AppleDouble', '.DS_Store'] # MacOsX stuff
             filelist = os.listdir(self.full_url(name_database))
-            for garbage in GARBAGE: if garbage in filelist: filelist.remove(garbage)
+            for garbage in GARBAGE: 
+                if garbage in filelist: filelist.remove(garbage)
             return filelist
         except:
             print('failed opening database ',  self.full_url(name_database))
@@ -189,18 +193,18 @@ class Image:
             imagelist = pickle.load( open(matname + '_images.pickle', "rb" ) )
         except Exception as e:
             # todo : allow to make a bigger batch from a previous run - needs us to parse imagelist... or just concatenate old data...
-            log.info('There is no imagelist, creating one: %s ', e)
+            self.log.info('There is no imagelist, creating one: %s ', e)
             if not(os.path.isfile(matname + '_images_lock')):
-                log.info(' > setting up image list for %s ', name_database)
+                self.log.info(' > setting up image list for %s ', name_database)
                 open(matname + '_images_lock', 'w').close()
                 imagelist = self.make_imagelist(name_database=name_database)
                 pickle.dump(imagelist, open( matname + '_images.pickle', "wb" ) )
                 try:
                     os.remove(matname + '_images_lock')
                 except Exception as e:
-                    log.error('Failed to remove lock file %s_images_lock, error : %s ', matname, e)
+                    self.log.error('Failed to remove lock file %s_images_lock, error : %s ', matname, e)
             else:
-                log.warn(' Some process is building the imagelist %s_images.pickle', matname)
+                self.log.warn(' Some process is building the imagelist %s_images.pickle', matname)
                 imagelist = 'locked'
 
         return imagelist
