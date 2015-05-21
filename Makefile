@@ -19,13 +19,16 @@ pypi_upload:
 	python setup.py sdist upload
 
 pypi_docs:
+	rm web.zip index.html
 	ipython nbconvert --to html $(NAME).ipynb
 	mv $(NAME).html index.html
 	#runipy $(NAME).ipynb  --html  index.html
 	zip web.zip index.html
-	rm index.html
-	open http://pypi.python.org/pypi?action=pkg_edit&name=$(NAME)
+	open https://pypi.python.org/pypi?action=pkg_edit&name=$NAME
 
+install_dev:
+	pip uninstall -y $(NAME)
+	pip install -e .
 todo:
 	grep -R * (^|#)[ ]*(TODO|FIXME|XXX|HINT|TIP)( |:)([^#]*)
 
@@ -42,6 +45,7 @@ clean_tmp:
 	find .  -name *lock* -exec rm -fr {} \;
 	rm frioul.*
 	rm log-edge-debug.log
+
 clean:
 	rm -fr figures/* *.pyc *.py~ build dist
 
