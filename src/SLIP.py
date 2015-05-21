@@ -311,6 +311,17 @@ class Image:
         R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
+    def enveloppe_color(self, alpha):
+        # 0.0, 1.0, 2.0 are resp. white, pink, red/brownian envelope
+        # (see http://en.wikipedia.org/wiki/1/f_noise )
+        if alpha == 0:
+            return 1.
+        else:
+            f_radius = np.zeros(self.f.shape)
+            f_radius = self.f**alpha
+            f_radius[(self.N_X-1)//2 + 1 , (self.N_Y-1)//2 + 1 ] = np.inf
+            return 1. / f_radius
+
     def frequency_angle(self):
         return np.arctan2(self.f_y, self.f_x)
 
