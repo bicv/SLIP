@@ -7,6 +7,7 @@ See http://pythonhosted.org/SLIP
 """
 import numpy as np
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
+import imageio
 import os
 # -------------------------------------------
 import warnings
@@ -59,6 +60,14 @@ class Image:
         - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
+        try: # to read pe as an image
+            pe = imageio.imread(pe)
+        except:
+            pass
+
+        if type(pe) is np.ndarray:
+            pe = ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
+
         if type(pe) is dict or type(pe) is str:
             pe = ParameterSet(pe)
 
@@ -493,8 +502,8 @@ if __name__ == '__main__':
     Some examples of use for the class
 
     """
-    from plt import imread
+    import imageio
     # whitening
-    image = imread('database/gris512.png')[:,:,0]
-
+    image = imageio.imread('database/gris512.png').sum(axis=-1)
+    
 
