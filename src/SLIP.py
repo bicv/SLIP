@@ -61,7 +61,7 @@ class Image:
 
         """
         try: # to read pe as an image
-            pe = imageio.imread(pe)
+            pe = np.array(imageio.imread(pe))
         except:
             pass
 
@@ -155,8 +155,7 @@ class Image:
             filename = filelist[i_image]
 
         import os
-        # TODO: use imageio
-        image = plt.imread(os.path.join(self.full_url(name_database), filename)) * 1.
+        image = imageio.imread(os.path.join(self.full_url(name_database), filename)) * 1.
         if image.ndim == 3:
             # TODO : RGB correction
             image = image.sum(axis=2)
