@@ -506,6 +506,9 @@ class Image:
         else:
             return np.exp(-(self.f/f_0)**steepness)
 
+    def power_spectrum(self, image):
+        return fftshift(np.absolute(fft2(image))**2)
+
     def whitening_filt(self, recompute=False):
         """
         Returns the envelope of the whitening filter.
@@ -534,10 +537,7 @@ class Image:
                 power_spectrum = 0. # power spectrum
                 for i_learning in range(self.pe.white_n_learning):
                     image, filename, croparea = self.patch(self.pe.white_name_database, verbose=False)
-                    #image = self.normalize(image) #TODO : is this fine?
-                    power_spectrum += np.abs(fft2(image))**2
-
-                power_spectrum = fftshift(power_spectrum)
+                    power_spectrum += self.power_spectrum(image)
                 power_spectrum /= np.mean(power_spectrum)
 
                 # formula from Atick:
@@ -570,19 +570,19 @@ class Image:
         return self.FTfilter(image, self.f_mask)
 
 
-    def whitening(self, image, struct=True):
+    def whitening(self, image):
         """
         Returns the whitened image
         """
-        K = self.whitening_filt(struct=struct)
+        K = self.whitening_filt()
         return self.FTfilter(image, K)
 
-    def dewhitening(self, white, struct=True):
+    def dewhitening(self, white):
         """
         Returns the dewhitened image
 
         """
-        K = self.whitening_filt(struct=struct)
+        K = self.whitening_filt()
         return self.FTfilter(white, 1./K)
 
     def hist_radial_frequency(self, FT, N_f = 20):
@@ -635,13 +635,13 @@ class Image:
         if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        fig, a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, opts=opts)
-        fig, a2 = self.imshow(image, fig=fig, ax=a2, norm=norm, opts=opts)
+        fig, a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, axis=axis, opts=opts)
+        fig, a2 = self.imshow(image, fig=fig, ax=a2, cmap=plt.cm.gray, norm=norm, axis=axis, opts=opts)
         if title:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
         if not(axis):
-            plt.setp(a1, xticks=[], yticks=[])
+            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=[''], yticklabels=[''])
             plt.setp(a2, xticks=[], yticks=[])
         else:
             plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
