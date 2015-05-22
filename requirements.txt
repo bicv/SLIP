@@ -1,4 +1,5 @@
 numpy
+IPython
 imageio
 scipy
 matplotlib

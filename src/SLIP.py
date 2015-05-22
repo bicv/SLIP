@@ -19,8 +19,28 @@ from NeuroTools.parameters import ParameterSet
 import logging
 
 def imread(URL):
+    """
+    Loads an image.
+
+    Returns an image. If that fails, retunrs a string with the error message
+
+    """
     import imageio
-    return np.array(imageio.imread(URL))
+    try:
+        image = np.array(imageio.imread(URL))
+    except:
+        return 'failed opening '+ URL
+
+    if image.ndim > 3:
+        return 'dimension higher than 3'
+    if image.ndim == 3:
+        if image.shape[2]==4: # discard alpha channel
+            image = image[..., :3]
+        if image.shape[2] > 4:
+            return 'imread : more than 4 channels, have you imported a video?'
+        # TODO : RGB correction
+        image = image.sum(axis=-1) # convert to grayscale
+    return image
 
 class Image:
     """
@@ -78,18 +98,18 @@ class Image:
     def get_pe(self, pe):
         if type(pe) is tuple:
             return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
-        if type(pe) is ParameterSet:
+        elif type(pe) is ParameterSet:
             return pe
         elif type(pe) is dict:
             return ParameterSet(pe)
         elif type(pe) is np.ndarray:
             return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
-            try: # to read pe as an image
-                pe = imread(pe)
-                return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
-            except:
+            im = imread(pe)
+            if type(im) is str: #  loding an iamge failed
                return ParameterSet(pe)
+            else:
+               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
             self.log.error('could not guess what the init variable is')
 
@@ -179,22 +199,9 @@ class Image:
             return 'Failed to load directory'
 
     def imread(self, URL, resize=True):
-        try:
-            image = imread(URL)
-        except:
-            self.log.error('failed opening ', URL)
-
-
-        if image.ndim > 3:
-            self.log.error('dimension higher than 3')
-        if image.ndim == 3:
-            if image.shape[2]==4: # discard alpha channel
-                image = image[..., :3]
-            if image.shape[2] > 4:
-                self.log.error('imread : more than 4 channels, have you imported a video?')
-            # TODO : RGB correction
-            image = image.sum(axis=-1) # convert to grayscale
-        if resize and (self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]):
+        image = imread(URL)
+        if type(image) is str: self.log.error(image)
+        elif resize and (self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]):
             self.set_size(image)
         return image
 
@@ -443,7 +450,7 @@ class Image:
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
 
-    def retina(self, df=.07, sigma=.02):
+    def retina(self, df=.07, sigma=.01):
         """
         A parametric description of the envelope of retina processsing.
 
@@ -494,7 +501,7 @@ class Image:
         """
         return np.exp(-(self.f/f_0)**steepness)
 
-    def whitening_filt(self, struct=True):
+    def whitening_filt(self, struct=True, recompute=False):
         """
         Returns the envelope of the whitening filter.
 
@@ -518,7 +525,7 @@ class Image:
         elif self.pe.white_n_learning>0:
             try:
                 K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
-                if self.pe.recompute:
+                if recompute:
                     raise('Recomputing the whitening filter')
             except:
                 print(' Learning the whitening filter')
@@ -550,26 +557,20 @@ class Image:
         return self.FTfilter(image, self.f_mask)
 
 
-    def whitening(self, image):
+    def whitening(self, image, struct=True):
         """
         Returns the whitened image
         """
-        K = self.whitening_filt()
+        K = self.whitening_filt(struct=struct)
         return self.FTfilter(image, K)
 
-    def dewhitening(self, white, threshold=0.001):
+    def dewhitening(self, white, struct=True):
         """
         Returns the dewhitened image
 
         """
-        K = self.whitening_filt()
-        if threshold ==0:
-            return self.FTfilter(image, 1./K)
-        else:
-            K[K==0] = 1.e12 # avoid DC component + corners for which gain is almost null
-            FT_image = fftshift(fft2(white)) / K * self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
-            FT_image[K<threshold*K.max()] = 0.
-            return self.invert(FT_image, full=False)
+        K = self.whitening_filt(struct=struct)
+        return self.FTfilter(white, 1./K)
 
 # plotting routines
 #         origin : [‘upper’ | ‘lower’], optional, default: None
@@ -592,15 +593,14 @@ class Image:
         ax.axis([0, self.N_X, self.N_Y, 0])
         return fig, ax
 
-    def show_FT(self, FT_image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
+    def spectrum(self, image, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+            title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        image_temp = self.invert(FT_image)#, phase=phase)
-        if fig is None: fig = plt.figure(figsize=(12, 6))
+        if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        if norm: FT_image /= np.absolute(FT_image).max()
-        fig , a1 = self.imshow(FT_image, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
-        fig , a2 = self.imshow(image_temp, fig=fig, ax=a2, norm=norm)
+        fig , a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, opts=opts)
+        fig , a2 = self.imshow(image_temp, fig=fig, ax=a2, norm=norm, opts=opts)
         if title:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
@@ -611,23 +611,18 @@ class Image:
         a2.axis([0, self.N_X, self.N_Y, 0])
         return fig, a1, a2
 
+    def show_FT(self, FT_image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
+            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+        image = self.invert(FT_image)#, phase=phase)
+        fig, a1, a2 = self.spectrum(self, image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
+            title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+        return fig, a1, a2
+
     def show_spectrum(self, image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        FT_image = self.fourier(image, full=False)
-        if fig is None: fig = plt.figure(figsize=(12, 6))
-        if a1 is None: a1 = fig.add_subplot(121)
-        if a2 is None: a2 = fig.add_subplot(122)
-        if norm: FT_image /= np.absolute(FT_image).max()
-        fig , a1 = self.imshow(FT_image, fig=fig, ax=a1, cmap=plt.cm.hsv, opts=opts)
-        fig , a2 = self.imshow(image, fig=fig, ax=a2, norm=norm)
-        if title:
-            plt.setp(a1, title='Spectrum')
-            plt.setp(a2, title='Image')
-        if not(axis):
-            plt.setp(a1, xticks=[], yticks=[])
-            plt.setp(a2, xticks=[], yticks=[])
-        a1.axis([0, self.N_X, self.N_Y, 0])
-        a2.axis([0, self.N_X, self.N_Y, 0])
+        FT_image = np.absolute(self.fourier(image, full=False))
+        fig, a1, a2 = self.spectrum(self, image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
+            title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
 def _test():
