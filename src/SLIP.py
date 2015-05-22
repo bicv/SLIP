@@ -452,17 +452,21 @@ class Image:
 
     def retina(self, df=.07, sigma=.01):
         """
-        A parametric description of the envelope of retina processsing.
+        A parametric description of the envelope of retinal processsing.
 
-        From raw pixelized images, we want to keep information that is relevent to the content of
-        the objects in the image. In particular, we want to avoid:
+        In digital images, some of the energy in Fourier space is concentrated outside the disk corresponding to the Nyquist frequency. Let's design a filter with:
 
-            - information that would not be uniformly distributed when rotating the image. In
-            particular, we discard information outside the unit disk in Fourier space, in particular 
-            above the Nyquist frequency,
-            - information that relates to information of the order the size of the image. This
-            involves discarding information at low-level frequencies.
+            - a sharp cut-off for radial frequencies higher than the Nyquist frequency,
+            - times a smooth but sharp transition (implemented with a decaying exponential),
+            - times a high-pass filter designed by one minus a gaussian blur.
 
+        This filter is rotation invariant.
+
+        Note that this filter is defined by two parameters:
+            - one for scaling the smoothness of the transition in the high-frequency range,
+            - one for the characteristic length of the high-pass filter.
+
+        These are defined relative to the Nyquist frequency and therefore relative to the size of the image.
         """
         # removing high frequencies in the corners
         env = (1-np.exp((self.f-.5)/(.5*df)))*(self.f<.5)
@@ -474,12 +478,10 @@ class Image:
         """
         Returns the whitening filter used by (Olshausen, 98)
 
-        /!\ you will have some problems at dewhitening without a low-pass
-
         """
         power_spectrum =  self.f**(-self.pe.white_alpha*2)
         power_spectrum /= np.mean(power_spectrum)
-        K_ols = (self.pe.white_N_0**2 + power_spectrum)**-.5
+        K_ols = (power_spectrum)**-.5
         K_ols *= self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
         K_ols /= np.mean(K_ols)
         return  K_ols
@@ -494,12 +496,15 @@ class Image:
 
         from Olshausen 98 (p.11):
         f_0  = 200 cycles / image (512 x 512 images)
-        in absolute coordiantes : f_0 = 200 / 512 / 2 (?)
+        in absolute coordinates : f_0 = 200 / 512 / 2
 
         steepness is to produce a "fairly sharp cutoff"
 
         """
-        return np.exp(-(self.f/f_0)**steepness)
+        if f_0==0:
+            return 1
+        else:
+            return np.exp(-(self.f/f_0)**steepness)
 
     def whitening_filt(self, struct=True, recompute=False):
         """
@@ -553,6 +558,17 @@ class Image:
     def preprocess(self, image):
         """
         Returns the pre-processed image
+
+        From raw pixelized images, we want to keep information that is relevent to the content of
+        the objects in the image. In particular, we want to avoid:
+
+            - information that would not be uniformly distributed when rotating the image. In
+            particular, we discard information outside the unit disk in Fourier space, in particular 
+            above the Nyquist frequency,
+            - information that relates to information of the order the size of the image. This
+            involves discarding information at low-level frequencies.
+        
+        See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
         """
         return self.FTfilter(image, self.f_mask)
 
@@ -599,30 +615,36 @@ class Image:
         if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        fig , a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, opts=opts)
-        fig , a2 = self.imshow(image_temp, fig=fig, ax=a2, norm=norm, opts=opts)
+        fig, a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, opts=opts)
+        fig, a2 = self.imshow(image, fig=fig, ax=a2, norm=norm, opts=opts)
         if title:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
         if not(axis):
             plt.setp(a1, xticks=[], yticks=[])
             plt.setp(a2, xticks=[], yticks=[])
+        else:
+            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
+            plt.setp(a2, xticks=np.linspace(0, self.N_X, 5), yticks=np.linspace(0, self.N_Y, 5))
+
         a1.axis([0, self.N_X, self.N_Y, 0])
         a2.axis([0, self.N_X, self.N_Y, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
+    def show_FT(self, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+            title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         image = self.invert(FT_image)#, phase=phase)
-        fig, a1, a2 = self.spectrum(self, image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
-            title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+        fig, a1, a2 = self.spectrum(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, a1=None, a2=None, axis=False, title=True, norm=True,
+    def show_spectrum(self, image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+            title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         FT_image = np.absolute(self.fourier(image, full=False))
-        fig, a1, a2 = self.spectrum(self, image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
-            title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+        fig, a1, a2 = self.spectrum(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
 def _test():
