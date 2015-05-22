@@ -506,7 +506,7 @@ class Image:
         else:
             return np.exp(-(self.f/f_0)**steepness)
 
-    def whitening_filt(self, struct=True, recompute=False):
+    def whitening_filt(self, recompute=False):
         """
         Returns the envelope of the whitening filter.
 
@@ -524,10 +524,7 @@ class Image:
             we return the parametrization based on Olshausen, 1996
 
         """
-        if struct:
-            return self.f
-
-        elif self.pe.white_n_learning>0:
+        if self.pe.white_n_learning>0:
             try:
                 K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
                 if recompute:
@@ -588,6 +585,29 @@ class Image:
         K = self.whitening_filt(struct=struct)
         return self.FTfilter(white, 1./K)
 
+    def hist_radial_frequency(self, FT, N_f = 20):
+        """
+        A simple function to compute a radial histogram in different spatial frequency bands.
+        
+        """
+         #F.shape[0]/2 # making an histogram with N_f bins
+        f_bins = np.linspace(0., 0.5, N_f+1)
+        f_bins = np.logspace(-2., 0, N_f+1, base=10)*0.5
+
+        N_orientations = 24 # making an histogram with N_f bins
+        theta_bins = np.linspace(0, np.pi, N_orientations, endpoint=False)
+
+        F_rot = np.zeros((N_f, N_orientations))
+        for i_theta in range(N_orientations):
+            for i_f in range(N_f):
+                f_slice = (f_bins[i_f] < self.f) *  ( self.f < f_bins[i_f+1])
+                theta_slice = np.exp(np.cos(self.f_theta - theta_bins[i_theta])/(1.5*2*np.pi/N_orientations)**2)
+                F_rot[i_f, i_theta] = (f_slice * theta_slice * FT).sum()
+                F_rot[i_f, i_theta] /= (f_slice * theta_slice).sum() # normalize by the integration area (numeric)
+        if np.isnan(F_rot).any(): print('Beware of the NaNs!')
+        F_rot /= F_rot.max()
+        return f_bins, theta_bins, F_rot
+
 # plotting routines
 #         origin : [‘upper’ | ‘lower’], optional, default: None
 #         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
@@ -609,7 +629,7 @@ class Image:
         ax.axis([0, self.N_X, self.N_Y, 0])
         return fig, ax
 
-    def spectrum(self, image, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+    def show_image_FT(self, image, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         if fig is None: fig = plt.figure(figsize=figsize)
@@ -635,7 +655,7 @@ class Image:
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         image = self.invert(FT_image)#, phase=phase)
-        fig, a1, a2 = self.spectrum(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
+        fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
@@ -643,7 +663,7 @@ class Image:
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         FT_image = np.absolute(self.fourier(image, full=False))
-        fig, a1, a2 = self.spectrum(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
+        fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
