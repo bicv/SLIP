@@ -321,12 +321,11 @@ class Image:
                 croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
         if self.pe.do_mask: image_ *= self.mask
-        if preprocess: image_ = self.preprocess(image_)
-        image_ = self.normalize(image_, center=center, use_max=use_max)
+        image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
         return image_, filename, croparea
 
-    def normalize(self, image, center=True, use_max=True):
-        image_ = image.copy()*1.
+    def normalize(self, image, preprocess=True, center=True, use_max=True):
+        if preprocess: image_ = self.preprocess(image)
         if center: image_ -= image_.mean()
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
