@@ -1,4 +1,5 @@
 # -*- coding: utf8 -*-
+from __future__ import division
 """
 SLIP: a Simple Library for Image Processing.
 
@@ -449,7 +450,7 @@ class Image:
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
 
-    def retina(self, df=.07, sigma=.01):
+    def retina(self, df=.07, sigma=.003):
         """
         A parametric description of the envelope of retinal processsing.
 
