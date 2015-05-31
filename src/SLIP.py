@@ -450,11 +450,14 @@ class Image:
         # sub-pixel translation
         return self.FTfilter(image, self.trans(u, v))
 
-    def retina(self, df=.07, sigma=.003):
+    def retina(self, df=.07, sigma=.5):
         """
         A parametric description of the envelope of retinal processsing.
+        See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
+        for more information.
 
-        In digital images, some of the energy in Fourier space is concentrated outside the disk corresponding to the Nyquist frequency. Let's design a filter with:
+        In digital images, some of the energy in Fourier space is concentrated outside the 
+        disk corresponding to the Nyquist frequency. Let's design a filter with:
 
             - a sharp cut-off for radial frequencies higher than the Nyquist frequency,
             - times a smooth but sharp transition (implemented with a decaying exponential),
@@ -466,12 +469,13 @@ class Image:
             - one for scaling the smoothness of the transition in the high-frequency range,
             - one for the characteristic length of the high-pass filter.
 
-        These are defined relative to the Nyquist frequency and therefore relative to the size of the image.
+        The first is defined relative to the Nyquist frequency (in absolute values) while the second 
+        is relative to the size of the image in pixels and is given in number of pixels.
         """
         # removing high frequencies in the corners
         env = (1-np.exp((self.f-.5)/(.5*df)))*(self.f<.5)
         # removing low frequencies
-        env *= 1-np.exp(-.5*(self.f**2)/((.5*sigma)**2))
+        env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.N_X)**2))
         return env
 
     def olshausen_whitening_filt(self):
@@ -564,8 +568,9 @@ class Image:
             above the Nyquist frequency,
             - information that relates to information of the order the size of the image. This
             involves discarding information at low-level frequencies.
-        
+
         See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
+        for more information.
         """
         return self.FTfilter(image, self.f_mask)
 
@@ -629,7 +634,7 @@ class Image:
         ax.axis([0, self.N_X, self.N_Y, 0])
         return fig, ax
 
-    def show_image_FT(self, image, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+    def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         if fig is None: fig = plt.figure(figsize=figsize)
@@ -651,7 +656,7 @@ class Image:
         a2.axis([0, self.N_X, self.N_Y, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+    def show_FT(self, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         image = self.invert(FT_image)#, phase=phase)
@@ -659,7 +664,7 @@ class Image:
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, figsize=(12, 6), a1=None, a2=None, axis=False, 
+    def show_spectrum(self, image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         FT_image = np.absolute(self.fourier(image, full=False))
