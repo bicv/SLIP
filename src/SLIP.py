@@ -1,5 +1,5 @@
 # -*- coding: utf8 -*-
-from __future__ import division
+from __future__ import (absolute_import, division, print_function, unicode_literals)
 """
 SLIP: a Simple Library for Image Processing.
 
@@ -107,7 +107,7 @@ class Image:
             return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
             im = imread(pe)
-            if type(im) is str: #  loding an iamge failed
+            if not type(im) is np.ndarray: #  loading an image failed
                return ParameterSet(pe)
             else:
                return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
