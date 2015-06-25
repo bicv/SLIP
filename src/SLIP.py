@@ -196,7 +196,7 @@ class Image:
                 if garbage in filelist: filelist.remove(garbage)
             return filelist
         except:
-            self.log.error('failed opening database ',  self.full_url(name_database))
+            self.log.error('XX failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
     def imread(self, URL, resize=True):
@@ -234,7 +234,7 @@ class Image:
         """
         Makes a list of images with no repetition.
 
-        Takes as an input the name of a database (the name of a folder in the `datapath``),
+        Takes as an input the name of a database (the name of a folder in the ``datapath``),
         returns a list of the filenames along with the crop area.
 
         """
@@ -261,7 +261,7 @@ class Image:
         returns an imagelist from a pickled database.
 
         If the stored imagelist does not exist, creates it.
-        The ``exp`` sting allows to tag the list to a particular experiment.
+        The ``exp`` string allows to tag the list for a particular experiment.
 
         """
         self.mkdir()
