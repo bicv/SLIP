@@ -162,7 +162,14 @@ class Image:
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
     def init_logging(self, filename='debug.log', name="SLIP"):
-        PID, HOST = os.getpid(), os.uname()[1]
+        try:
+            PID = os.getpid()
+        except:
+            PID = 'N/A'
+        try:
+            HOST = os.uname()[1]
+        except:
+            HOST = 'N/A'
         self.TAG = 'host-' + HOST + '_pid-' + str(PID)
         logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
         self.log = logging.getLogger(name)
