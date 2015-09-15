@@ -92,10 +92,6 @@ class Image:
         self.N_Y = self.pe.N_Y # n_y
         self.init()
 
-        if not 'verbose' in self.pe.keys():
-            self.pe.verbose = logging.WARN
-        self.init_logging()
-
     def get_pe(self, pe):
         if type(pe) is tuple:
             return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
@@ -160,6 +156,10 @@ class Image:
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
+
+        if not 'verbose' in self.pe.keys():
+            self.pe.verbose = logging.WARN
+        self.init_logging()
 
     def init_logging(self, filename='debug.log', name="SLIP"):
         try:
