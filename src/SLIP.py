@@ -310,6 +310,7 @@ class Image:
         if (croparea is None):
             image_size_h, image_size_v = image.shape
             if self.N_X > image_size_h or self.N_Y > image_size_v:
+                print('N_X patch_h patch_v  ', self.N_X, image_size_h, image_size_v)
                 raise Exception('Patch size too big for the image in your DB')
             elif self.N_X == image_size_h or self.N_Y == image_size_v:
                 return image, filename, [0, self.N_X, 0, self.N_Y]
