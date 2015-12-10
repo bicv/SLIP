@@ -28,7 +28,7 @@ def imread(URL):
     """
     import imageio
     try:
-        image = np.array(imageio.imread(URL))
+        image = np.array(imageio.imread(URL), dtype=np.float)
     except:
         return 'failed opening '+ URL
 
