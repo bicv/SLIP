@@ -1,8 +1,8 @@
 from .SLIP import Image, imread
 
 __author__ = "(c) Laurent Perrinet INT - CNRS"
+############################  FIGURES   ########################################
 def init_pylab():
-    ############################  FIGURES   ########################################
     from NeuroTools import check_dependency
     HAVE_MATPLOTLIB = check_dependency('matplotlib')
     if HAVE_MATPLOTLIB:
@@ -56,4 +56,3 @@ def adjust_spines(ax,spines):
     else:
         # no xaxis ticks
         ax.xaxis.set_ticks([])
-############################  FIGURES   ########################################
