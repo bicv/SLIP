@@ -7,28 +7,36 @@ See http://pythonhosted.org/SLIP
 
 """
 import numpy as np
-from numpy.fft import fft2, fftshift, ifft2, ifftshift
-import os
-# -------------------------------------------
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-import time
 
-import pickle
-import matplotlib.pyplot as plt
-from NeuroTools.parameters import ParameterSet
-import logging
 
-def imread(URL):
+def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     """
-    Loads an image.
+    Loads whatever image. Returns a grayscale (2D) image. 
+    
+    These scalar values correspond to the grayscale luminance: "The intensity of a pixel is expressed within a given range between a minimum and a maximum, inclusive. This range is represented in an abstract way as a range from 0 (total absence, black) and 1 (total presence, white), with any fractional values in between." This range is here between 0 and 1.
+    
+    If ``grayscale`` is True, a grayscale image is obtained by summing over channels following the formula:
+    
+    Y  = 0.2989 * R + 0.5870 * G + 0.1140 * B 
 
-    Returns an image. If that fails, retunrs a string with the error message
+    http://docs.opencv.org/2.4/modules/imgproc/doc/miscellaneous_transformations.html#cvtcolor
+    
+    This function tries to guess at best the range and format. 
+    If that fails, returns a string with the error message.
+
+    TODO: the above formula is an approximation of the official conversion:
+    
+        Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
+    
+    (see https://en.wikipedia.org/wiki/Grayscale#Colorimetric_.28luminance-preserving.29_conversion_to_grayscale)
+       
 
     """
     import imageio
     try:
-        image = np.array(imageio.imread(URL), dtype=np.float)
+        image = imageio.imread(URL)
+        if im.dtype == np.uint8: image /= 255.
+        image = np.array(image, dtype=np.float)
     except:
         return 'failed opening '+ URL
 
@@ -39,11 +47,24 @@ def imread(URL):
             image = image[..., :3]
         if image.shape[2] > 4:
             return 'imread : more than 4 channels, have you imported a video?'
-        # TODO : RGB correction
-        image = image.sum(axis=-1) # convert to grayscale
+        if grayscale is True:
+            # RGB correction
+            image *= rgb2gray[np.newaxis, np.newaxis, :]
+            image = image.sum(axis=-1) # convert to grayscale
     return image
 
 class Image:
+    from numpy.fft import fft2, fftshift, ifft2, ifftshift
+    import os
+    # -------------------------------------------
+    import warnings
+    warnings.filterwarnings("ignore", category=UserWarning)
+    import time
+
+    import pickle
+    import matplotlib.pyplot as plt
+    from NeuroTools.parameters import ParameterSet
+    import logging
     """
     This library collects different Image Processing tools.
 
@@ -86,13 +107,17 @@ class Image:
         - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
-
         self.pe = self.get_pe(pe)
+        self.init_logging()
+
         self.N_X = self.pe.N_X # n_x
         self.N_Y = self.pe.N_Y # n_y
         self.init()
 
     def get_pe(self, pe):
+        """ guesses parameters from the init variable
+        outputs a ParameterSet
+        """
         if type(pe) is tuple:
             return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
         elif type(pe) is ParameterSet:
@@ -108,7 +133,26 @@ class Image:
             else:
                return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
-            self.log.error('could not guess what the init variable is')
+            print('error finding parameters')
+            return ParameterSet({'N_X':0, 'N_Y':0})
+
+    def init_logging(self, filename='debug.log', name="SLIP"):
+        try:
+            PID = os.getpid()
+        except:
+            PID = 'N/A'
+        try:
+            HOST = os.uname()[1]
+        except:
+            HOST = 'N/A'
+        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
+        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
+        self.log = logging.getLogger(name)
+        try:
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
+        except:
+            self.pe.verbose = logging.WARN
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def get_size(self, im):
         if type(im) is tuple:
@@ -156,24 +200,6 @@ class Image:
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
-
-        if not 'verbose' in self.pe.keys():
-            self.pe.verbose = logging.WARN
-        self.init_logging()
-
-    def init_logging(self, filename='debug.log', name="SLIP"):
-        try:
-            PID = os.getpid()
-        except:
-            PID = 'N/A'
-        try:
-            HOST = os.uname()[1]
-        except:
-            HOST = 'N/A'
-        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
-        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
-        self.log = logging.getLogger(name)
-        self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def mkdir(self):
         """ 
