@@ -11,7 +11,9 @@ import numpy as np
 
 def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     """
-    Loads whatever image. Returns a grayscale (2D) image. 
+    Loads whatever image. Returns a grayscale (2D) image.
+    
+    Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
     
     These scalar values correspond to the grayscale luminance: "The intensity of a pixel is expressed within a given range between a minimum and a maximum, inclusive. This range is represented in an abstract way as a range from 0 (total absence, black) and 1 (total presence, white), with any fractional values in between." This range is here between 0 and 1.
     
@@ -20,6 +22,8 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     Y  = 0.2989 * R + 0.5870 * G + 0.1140 * B 
 
     http://docs.opencv.org/2.4/modules/imgproc/doc/miscellaneous_transformations.html#cvtcolor
+    which corresponds to the definition of luma:
+    http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html#RTFToC11
     
     This function tries to guess at best the range and format. 
     If that fails, returns a string with the error message.
@@ -28,43 +32,44 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     
         Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
     
+    in the linear RGB space.
     (see https://en.wikipedia.org/wiki/Grayscale#Colorimetric_.28luminance-preserving.29_conversion_to_grayscale)
        
 
     """
-    import imageio
     try:
+        import imageio
         image = imageio.imread(URL)
-        if im.dtype == np.uint8: image /= 255.
+        if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 255.
         image = np.array(image, dtype=np.float)
-    except:
-        return 'failed opening '+ URL
+        if image.ndim > 3:
+            return 'dimension higher than 3'
+        if image.ndim == 3:
+            if image.shape[2]==4: # discard alpha channel
+                image = image[:, :, :3] * image[:, :, -1, np.newaxis]
+            if image.shape[2] > 4:
+                return 'imread : more than 4 channels, have you imported a video?'
+            if grayscale is True:
+                image *= np.array(rgb2gray)[np.newaxis, np.newaxis, :]
+                image = image.sum(axis=-1) # convert to grayscale
 
-    if image.ndim > 3:
-        return 'dimension higher than 3'
-    if image.ndim == 3:
-        if image.shape[2]==4: # discard alpha channel
-            image = image[..., :3]
-        if image.shape[2] > 4:
-            return 'imread : more than 4 channels, have you imported a video?'
-        if grayscale is True:
-            # RGB correction
-            image *= rgb2gray[np.newaxis, np.newaxis, :]
-            image = image.sum(axis=-1) # convert to grayscale
-    return image
+        return image
+    except:
+        return 'could not return an image'
+    
+from numpy.fft import fft2, fftshift, ifft2, ifftshift
+import os
+# -------------------------------------------
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+import time
+
+import pickle
+import matplotlib.pyplot as plt
+from NeuroTools.parameters import ParameterSet
+import logging
 
 class Image:
-    from numpy.fft import fft2, fftshift, ifft2, ifftshift
-    import os
-    # -------------------------------------------
-    import warnings
-    warnings.filterwarnings("ignore", category=UserWarning)
-    import time
-
-    import pickle
-    import matplotlib.pyplot as plt
-    from NeuroTools.parameters import ParameterSet
-    import logging
     """
     This library collects different Image Processing tools.
 
