@@ -219,6 +219,7 @@ class Image:
 
         The strategy is to pick one image in the folder using the list provided by the ``list_database``function.
 
+        TODO: it would be useful to be able to load from standard databases such as http://www.cps.utexas.edu/natural_scenes/db.shtml
 
         """
         filelist = self.list_database(name_database=name_database)
