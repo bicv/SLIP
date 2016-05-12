@@ -201,7 +201,7 @@ class Image:
 
         self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
-        self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
+        self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1/self.pe.mask_exponent)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
@@ -654,7 +654,7 @@ class Image:
         return f_bins, theta_bins, F_rot
 
     def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='Y axis', ylabel='X axis', figsize=(8, 8),
+            xlabel='Y axis', ylabel='X axis', figsize=(8, 8), mask=False,
             opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
         """
         Plotting routine to show an image
@@ -674,6 +674,10 @@ class Image:
             ax.set_ylabel(ylabel)
             ax.set_xlabel(xlabel)
         ax.axis([0, self.N_Y-1, self.N_X-1, 0])
+        if mask:
+            linewidth_mask = 1 # HACK
+            circ = plt.Circle((.5*self.N_Y, .5*self.N_Y), radius=0.5*self.N_Y-linewidth_mask/2., fill=False, facecolor='none', edgecolor = 'black', alpha = 0.5, ls='dashed', lw=linewidth_mask)
+            ax.add_patch(circ)
         return fig, ax
 
     def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,

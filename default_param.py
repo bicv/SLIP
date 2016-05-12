@@ -3,6 +3,7 @@
 'N_X' : 256, # size of images
 'N_Y' : 256, # size of images
 'do_mask'  : False, # used forinstance in the Matching Pursuit algorithm self.pe.do_mask
+'mask_exponent': 3., #sharpness of the mask
 'figpath' : 'figures/',
 'matpath' : 'mat/',
 'datapath' : 'database/',
