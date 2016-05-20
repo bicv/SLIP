@@ -65,6 +65,7 @@ import time
 
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib
 from NeuroTools.parameters import ParameterSet
 import logging
 
@@ -201,7 +202,7 @@ class Image:
 
         self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
-        self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1/self.pe.mask_exponent)
+        self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1./self.pe.mask_exponent)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
 
@@ -654,8 +655,7 @@ class Image:
         return f_bins, theta_bins, F_rot
 
     def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='Y axis', ylabel='X axis', figsize=(8, 8), mask=False,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+            xlabel='Y axis', ylabel='X axis', figsize=(8, 8), mask=False, vmin=-1, vmax=1):
         """
         Plotting routine to show an image
 
@@ -667,7 +667,7 @@ class Image:
         if fig is None: fig = plt.figure(figsize=figsize)
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
-        ax.imshow(image, cmap=cmap, **opts)
+        ax.pcolor(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax))
         if not(axis):
             plt.setp(ax, xticks=[], yticks=[])
         else:
@@ -680,14 +680,14 @@ class Image:
             ax.add_patch(circ)
         return fig, ax
 
-    def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,
+    def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14/2.), a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+            vmin=-1., vmax=1.):
         if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, opts=opts)
-        fig, a2 = self.imshow(image, fig=fig, ax=a2, cmap=plt.cm.gray, norm=norm, axis=axis, opts=opts)
+        fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
+        fig, a2 = self.imshow(image, fig=fig, ax=a2, cmap=plt.cm.gray, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
         if title:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
@@ -700,24 +700,22 @@ class Image:
             plt.setp(a1, xlabel=r'$f_x$', ylabel=r'$f_y$')
             plt.setp(a2, xlabel=r'$f_x$', ylabel=r'$f_y$')
 
-        a1.axis([0, self.N_X-1, self.N_Y-1, 0])
-        a2.axis([0, self.N_X-1, self.N_Y-1, 0])
+        a1.axis('equal')#[0, self.N_X-1, self.N_Y-1, 0])
+        a2.axis('equal')#[0, self.N_X-1, self.N_Y-1, 0])
         return fig, a1, a2
 
     def show_FT(self, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,
-            title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+            title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         image = self.invert(FT_image)#, phase=phase)
         fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
-                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
     def show_spectrum(self, image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,
-            title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+            title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         FT_image = np.absolute(self.fourier(image, full=False))
         fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
-                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
 def _test():
