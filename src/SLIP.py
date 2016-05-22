@@ -704,14 +704,14 @@ class Image:
         a2.axis('equal')#[0, self.N_X-1, self.N_Y-1, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,
+    def show_FT(self, FT_image, fig=None, figsize=(14, 14/2), a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         image = self.invert(FT_image)#, phase=phase)
         fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False,
+    def show_spectrum(self, image, fig=None, figsize=(14, 14/2), a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         FT_image = np.absolute(self.fourier(image, full=False))
         fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
