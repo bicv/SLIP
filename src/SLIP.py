@@ -86,13 +86,17 @@ class Image:
         - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
-
         self.pe = self.get_pe(pe)
+        self.init_logging()
+
         self.N_X = self.pe.N_X # n_x
         self.N_Y = self.pe.N_Y # n_y
         self.init()
 
     def get_pe(self, pe):
+        """ guesses parameters from the init variable
+        outputs a ParameterSet
+        """
         if type(pe) is tuple:
             return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
         elif type(pe) is ParameterSet:
@@ -108,7 +112,26 @@ class Image:
             else:
                return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
-            self.log.error('could not guess what the init variable is')
+            print('error finding parameters')
+            return ParameterSet({'N_X':0, 'N_Y':0})
+
+    def init_logging(self, filename='debug.log', name="SLIP"):
+        try:
+            PID = os.getpid()
+        except:
+            PID = 'N/A'
+        try:
+            HOST = os.uname()[1]
+        except:
+            HOST = 'N/A'
+        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
+        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
+        self.log = logging.getLogger(name)
+        try:
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
+        except:
+            self.pe.verbose = logging.WARN
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def get_size(self, im):
         if type(im) is tuple:
@@ -156,24 +179,6 @@ class Image:
         self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
-
-        if not 'verbose' in self.pe.keys():
-            self.pe.verbose = logging.WARN
-        self.init_logging()
-
-    def init_logging(self, filename='debug.log', name="SLIP"):
-        try:
-            PID = os.getpid()
-        except:
-            PID = 'N/A'
-        try:
-            HOST = os.uname()[1]
-        except:
-            HOST = 'N/A'
-        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
-        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
-        self.log = logging.getLogger(name)
-        self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def mkdir(self):
         """ 
