@@ -114,9 +114,6 @@ class Image:
         """
         self.pe = self.get_pe(pe)
         self.init_logging()
-
-        self.N_X = self.pe.N_X # n_x
-        self.N_Y = self.pe.N_Y # n_y
         self.init()
 
     def get_pe(self, pe):
@@ -151,7 +148,7 @@ class Image:
         except:
             HOST = 'N/A'
         self.TAG = 'host-' + HOST + '_pid-' + str(PID)
-        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
+        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
         self.log = logging.getLogger(name)
         try:
             self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
@@ -182,11 +179,11 @@ class Image:
 
         """
         try: # to read pe as a tuple
-            self.N_X, self.N_Y = self.get_size(im)
+            self.pe.N_X, self.pe.N_Y = self.get_size(im)
         except:
             self.log.error('Could not set the size of the SLIP object')
-        self.pe.N_X = self.N_X # n_x
-        self.pe.N_Y = self.N_Y # n_y
+        self.pe.N_X = self.pe.N_X # n_x
+        self.pe.N_Y = self.pe.N_Y # n_y
         self.init()
 
     def init(self):
@@ -200,11 +197,11 @@ class Image:
         self.f = self.frequency_radius()
         self.f_theta = self.frequency_angle()
 
-        self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
+        self.x, self.y = np.mgrid[-1:1:1j*self.pe.N_X, -1:1:1j*self.pe.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
         self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1./self.pe.mask_exponent)
         self.f_mask = self.retina()
-        self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
+        self.X, self.Y  = np.meshgrid(np.arange(self.pe.N_X), np.arange(self.pe.N_Y))
 
     def mkdir(self):
         """
@@ -240,7 +237,7 @@ class Image:
     def imread(self, URL, resize=True):
         image = imread(URL)
         if type(image) is str: self.log.error(image)
-        elif resize and (self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]):
+        elif resize and (self.pe.N_X is not image.shape[0] or self.pe.N_Y is not image.shape[1]):
             self.set_size(image)
         return image
 
@@ -340,25 +337,25 @@ class Image:
 
         if (croparea is None):
             image_size_h, image_size_v = image.shape
-            if self.N_X > image_size_h or self.N_Y > image_size_v:
-                print('N_X patch_v patch_h  ', self.N_X, image_size_h, image_size_v)
+            if self.pe.N_X > image_size_h or self.pe.N_Y > image_size_v:
+                print('N_X patch_v patch_h  ', self.pe.N_X, image_size_h, image_size_v)
                 raise Exception('Patch size too big for the image in your DB')
-            elif self.N_X == image_size_h or self.N_Y == image_size_v:
-                return image, filename, [0, self.N_X, 0, self.N_Y]
+            elif self.pe.N_X == image_size_h or self.pe.N_Y == image_size_v:
+                return image, filename, [0, self.pe.N_X, 0, self.pe.N_Y]
             else:
                 energy = image.std()
                 energy_ = 0
 
                 while energy_ < threshold*energy:
                     #if energy_ > 0: print 'dropped patch'
-                    x_rand = int(np.ceil((image_size_h-self.N_X)*np.random.rand()))
-                    y_rand = int(np.ceil((image_size_v-self.N_Y)*np.random.rand()))
-                    image_ = image[(x_rand):(x_rand+self.N_X), (y_rand):(y_rand+self.N_Y)]
+                    x_rand = int(np.ceil((image_size_h-self.pe.N_X)*np.random.rand()))
+                    y_rand = int(np.ceil((image_size_v-self.pe.N_Y)*np.random.rand()))
+                    image_ = image[(x_rand):(x_rand+self.pe.N_X), (y_rand):(y_rand+self.pe.N_Y)]
                     energy_ = image_[:].std()
 
-                if verbose: print('Cropping @ [top, bottom, left, right]: ', [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y])
+                if verbose: print('Cropping @ [top, bottom, left, right]: ', [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y])
 
-                croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
+                croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
         if self.pe.do_mask: image_ *= self.mask
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
@@ -396,8 +393,8 @@ class Image:
         # transforms and their frequencies to put the zero-frequency components in the
         # middle, and np.fft.ifftshift(A) undoes that shift.
         #
-        fx, fy = np.mgrid[(-self.N_X//2):((self.N_X-1)//2 + 1), (-self.N_Y//2):((self.N_Y-1)//2 + 1)]
-        fx, fy = fx*1./self.N_X, fy*1./self.N_Y
+        fx, fy = np.mgrid[(-self.pe.N_X//2):((self.pe.N_X-1)//2 + 1), (-self.pe.N_Y//2):((self.pe.N_Y-1)//2 + 1)]
+        fx, fy = fx*1./self.pe.N_X, fy*1./self.pe.N_Y
         return fx, fy
 
 #     def expand_complex(self, FT, hue=False):
@@ -425,7 +422,7 @@ class Image:
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
-        R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
+        R2[self.pe.N_X//2 , self.pe.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
     def frequency_angle(self):
@@ -439,7 +436,7 @@ class Image:
         else:
             f_radius = np.zeros(self.f.shape)
             f_radius = self.f**alpha
-            f_radius[(self.N_X-1)//2 + 1 , (self.N_Y-1)//2 + 1 ] = np.inf
+            f_radius[(self.pe.N_X-1)//2 + 1 , (self.pe.N_Y-1)//2 + 1 ] = np.inf
             return 1. / f_radius
 
     # Fourier number crunching
@@ -470,7 +467,7 @@ class Image:
 
     def trans(self, u, v):
         return np.exp(-1j*2*np.pi*(u*self.f_x + v*self.f_y))
-#         return np.exp(-1j*2*np.pi*(u/self.N_X*self.f_x + v/self.N_Y*self.f_y))
+#         return np.exp(-1j*2*np.pi*(u/self.pe.N_X*self.f_x + v/self.pe.N_Y*self.f_y))
 
     def translate(self, image, vec, preshift=True):
         """
@@ -516,7 +513,7 @@ class Image:
         # removing high frequencies in the corners
         env = (1-np.exp((self.f-.5)/(.5*df)))*(self.f<.5)
         # removing low frequencies
-        env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.N_X)**2))
+        env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.pe.N_X)**2))
         return env
 
     def olshausen_whitening_filt(self):
@@ -574,7 +571,7 @@ class Image:
         """
         if self.pe.white_n_learning>0:
             try:
-                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
+                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'))
                 if recompute:
                     raise('Recomputing the whitening filter')
             except:
@@ -592,7 +589,7 @@ class Image:
                 K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.white_steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
                 self.mkdir()
-                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'), K)
+                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'), K)
         else:
             K = self.olshausen_whitening_filt()
         return K
@@ -673,10 +670,10 @@ class Image:
         else:
             ax.set_ylabel(ylabel)
             ax.set_xlabel(xlabel)
-        ax.axis([0, self.N_Y-1, self.N_X-1, 0])
+        ax.axis([0, self.pe.N_Y-1, self.pe.N_X-1, 0])
         if mask:
             linewidth_mask = 1 # HACK
-            circ = plt.Circle((.5*self.N_Y, .5*self.N_Y), radius=0.5*self.N_Y-linewidth_mask/2., fill=False, facecolor='none', edgecolor = 'black', alpha = 0.5, ls='dashed', lw=linewidth_mask)
+            circ = plt.Circle((.5*self.pe.N_Y, .5*self.pe.N_Y), radius=0.5*self.pe.N_Y-linewidth_mask/2., fill=False, facecolor='none', edgecolor = 'black', alpha = 0.5, ls='dashed', lw=linewidth_mask)
             ax.add_patch(circ)
         return fig, ax
 
@@ -692,16 +689,16 @@ class Image:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
         if not(axis):
-            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=[''], yticklabels=[''])
+            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=[''], yticklabels=[''])
             plt.setp(a2, xticks=[], yticks=[])
         else:
-            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
-            plt.setp(a2, xticks=np.linspace(0, self.N_X, 5), yticks=np.linspace(0, self.N_Y, 5))
+            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
+            plt.setp(a2, xticks=np.linspace(0, self.pe.N_X, 5), yticks=np.linspace(0, self.pe.N_Y, 5))
             plt.setp(a1, xlabel=r'$f_x$', ylabel=r'$f_y$')
             plt.setp(a2, xlabel=r'$f_x$', ylabel=r'$f_y$')
 
-        a1.axis('equal')#[0, self.N_X-1, self.N_Y-1, 0])
-        a2.axis('equal')#[0, self.N_X-1, self.N_Y-1, 0])
+        a1.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
+        a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         return fig, a1, a2
 
     def show_FT(self, FT_image, fig=None, figsize=(14, 14/2), a1=None, a2=None, axis=False,
