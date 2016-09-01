@@ -4,13 +4,12 @@
 from setuptools import setup, find_packages
 
 NAME = "SLIP"
-version = "0.3" # << to change in Makefile
+version = "0.3.1" # << to change in Makefile
 
 setup(
     name = NAME,
     version = version,
-    packages = find_packages('src', exclude='docs'),
-    package_dir = {'': 'src'},
+    packages = [NAME],
     author = "Laurent Perrinet INT - CNRS",
     author_email = "Laurent.Perrinet@univ-amu.fr",
     description = "SLIP: a Simple Library for Image Processing",

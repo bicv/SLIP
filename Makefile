@@ -1,11 +1,11 @@
 default: pypi_docs
 NAME = SLIP
-version = 0.3 # << to change in setup.py
+version = 0.3.1 # << to change in setup.py
 
 edit:
 	mvim -p setup.py src/__init__.py src/$(NAME).py README.md Makefile requirements.txt
 
-pypi_all: pypi_tags pypi_push pypi_upload pypi_docs
+pypi_all: pypi_tags pypi_push pypi_upload
 # https://docs.python.org/2/distutils/packageindex.html
 pypi_tags:
 	git commit -am' tagging for PyPI '
@@ -20,7 +20,7 @@ pypi_upload:
 	python setup.py sdist upload
 
 pypi_docs:
-	rm web.zip
+	#rm web.zip
 	#ipython nbconvert --to html $(NAME).ipynb
 	#mv $(NAME).html index.html
 	#runipy $(NAME).ipynb  --html  index.html
