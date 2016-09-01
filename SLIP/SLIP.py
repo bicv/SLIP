@@ -73,7 +73,7 @@ class Image:
     """
     This library collects different Image Processing tools.
 
-    Fork me on https://github.com/meduz/SLIP !
+    Fork me on https://github.com/bicv/SLIP !
 
     This library is used in other projects, in particular  for use with the ``LogGabor`` and ``SparseEdges`` libraries
     For more information check respective pages @
@@ -94,7 +94,7 @@ class Image:
         - load_in_database : loads a random image in a folder and
         - patch : takes a random patch of the correct size
     """
-    def __init__(self, pe='https://raw.githubusercontent.com/meduz/SLIP/master/default_param.py'):
+    def __init__(self, pe='https://raw.githubusercontent.com/bicv/SLIP/master/default_param.py'):
         """
         Initializes the Image class
 
