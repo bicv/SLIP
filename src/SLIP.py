@@ -117,23 +117,26 @@ class Image:
         self.init()
 
     def get_pe(self, pe):
-        """ guesses parameters from the init variable
+        """
+        Guesses the parameters from the init variable
+
+        We perform a duck-typing to guess parameters from different possible sources.
         outputs a ParameterSet
         """
         if type(pe) is tuple:
-            return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
+            return ParameterSet({'N_X':pe[0], 'N_Y':pe[1], 'mask_exponent':3.})
         elif type(pe) is ParameterSet:
             return pe
         elif type(pe) is dict:
             return ParameterSet(pe)
         elif type(pe) is np.ndarray:
-            return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
+            return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1], 'mask_exponent':3.})
         elif type(pe) is str:
             im = imread(pe)
             if not type(im) is np.ndarray: #  loading an image failed
                return ParameterSet(pe)
             else:
-               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
+               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1], 'mask_exponent':3.})
         else:
             print('error finding parameters')
             return ParameterSet({'N_X':0, 'N_Y':0})
