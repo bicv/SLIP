@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 
 NAME = "SLIP"
-version = "0.3.3" # << to change in Makefile
+version = "0.3.4" # << to change in Makefile
 
 setup(
     name = NAME,
@@ -15,7 +15,7 @@ setup(
     description = "SLIP: a Simple Library for Image Processing",
     long_description=open("README.md").read(),
     license = "GPLv2",
-    install_requires=['numpy,matplotlib'],
+    install_requires=['numpy', 'matplotlib'],
     keywords = ('computational neuroscience', 'simulation', 'analysis', 'visualization', 'biologically-inspired', 'computer vision'),
     url = 'https://github.com/meduz/' + NAME, # use the URL to the github repo
     download_url = 'https://github.com/meduz/' + NAME + '/tarball/' + version,
