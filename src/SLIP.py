@@ -94,7 +94,7 @@ class Image:
         - load_in_database : loads a random image in a folder and
         - patch : takes a random patch of the correct size
     """
-    def __init__(self, pe={'N_X':128, 'N_Y':128}):
+    def __init__(self, pe='https://raw.githubusercontent.com/meduz/SLIP/master/default_param.py'):
         """
         Initializes the Image class
 
@@ -124,19 +124,19 @@ class Image:
         outputs a ParameterSet
         """
         if type(pe) is tuple:
-            return ParameterSet({'N_X':pe[0], 'N_Y':pe[1], 'mask_exponent':3.})
+            return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
         elif type(pe) is ParameterSet:
             return pe
         elif type(pe) is dict:
             return ParameterSet(pe)
         elif type(pe) is np.ndarray:
-            return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1], 'mask_exponent':3.})
+            return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
             im = imread(pe)
             if not type(im) is np.ndarray: #  loading an image failed
                return ParameterSet(pe)
             else:
-               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1], 'mask_exponent':3.})
+               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
             print('error finding parameters')
             return ParameterSet({'N_X':0, 'N_Y':0})
@@ -189,7 +189,7 @@ class Image:
         self.pe.N_Y = self.pe.N_Y # n_y
         self.init()
 
-    def init(self):
+    def init(self, mask_exponent=3.):
         """
         Initializes different convenient matrices for image processing.
 
@@ -202,6 +202,7 @@ class Image:
 
         self.x, self.y = np.mgrid[-1:1:1j*self.pe.N_X, -1:1:1j*self.pe.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
+        if not 'mask_exponent' in self.pe.keys(): self.pe.mask_exponent = mask_exponent
         self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1./self.pe.mask_exponent)
         self.f_mask = self.retina()
         self.X, self.Y  = np.meshgrid(np.arange(self.pe.N_X), np.arange(self.pe.N_Y))
@@ -655,7 +656,7 @@ class Image:
         return f_bins, theta_bins, F_rot
 
     def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='Y axis', ylabel='X axis', figsize=(8, 8), mask=False, vmin=-1, vmax=1):
+            xlabel='Y axis', ylabel='X axis', figsize=8., mask=False, vmin=-1, vmax=1):
         """
         Plotting routine to show an image
 
@@ -663,8 +664,9 @@ class Image:
         Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
 
         """
+        if not 'figsize' in self.pe.keys(): self.pe.figsize = figsize
 
-        if fig is None: fig = plt.figure(figsize=(self.pe.figsize_edges*self.pe.N_Y/self.pe.N_X, self.pe.figsize_edges))
+        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize))
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
         ax.pcolor(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax))
@@ -680,10 +682,10 @@ class Image:
             ax.add_patch(circ)
         return fig, ax
 
-    def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14/2.), a1=None, a2=None, axis=False,
+    def show_image_FT(self, image, FT_image, fig=None, figsize=8., a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             vmin=-1., vmax=1.):
-        if fig is None: fig = plt.figure(figsize=figsize)
+        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize))
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
         fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
