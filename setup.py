@@ -4,12 +4,12 @@
 from setuptools import setup, find_packages
 
 NAME = "SLIP"
-version = "0.2"
+version = "0.3" # << to change in Makefile
 
 setup(
     name = NAME,
     version = version,
-    packages=find_packages('src', exclude='docs'),
+    packages = find_packages('src', exclude='docs'),
     package_dir = {'': 'src'},
     author = "Laurent Perrinet INT - CNRS",
     author_email = "Laurent.Perrinet@univ-amu.fr",
