@@ -103,7 +103,7 @@ class Image:
         - a dictionary containing parameters
         - a ``ndarray`` (dimensions ``N_X`` and ``N_Y`` are guessed from this array)
         - a string representing a file or URL pointing to an image file
-        - a string pointing to  a file or URL containing a dictionary of parameters
+        - a string pointing to  a file or URL containing a dictionary of parameters (or simply the name of the file)
         - a ``NeuroTools.parameters.ParameterSet`` object containing parameters
 
         Parameters are
@@ -691,7 +691,7 @@ class Image:
     def show_image_FT(self, image, FT_image, fig=None, figsize=8., a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             vmin=-1., vmax=1.):
-        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize))
+        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize/2))
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
         fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
@@ -712,14 +712,14 @@ class Image:
         a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, figsize=(14, 14/2), a1=None, a2=None, axis=False,
+    def show_FT(self, FT_image, fig=None, figsize=8., a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         image = self.invert(FT_image)#, phase=phase)
         fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, figsize=(14, 14/2), a1=None, a2=None, axis=False,
+    def show_spectrum(self, image, fig=None, figsize=8., a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         FT_image = np.absolute(self.fourier(image, full=False))
         fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
