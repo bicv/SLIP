@@ -132,11 +132,17 @@ class Image:
         elif type(pe) is np.ndarray:
             return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
+            # is it the URL of an image?
             im = imread(pe)
             if not type(im) is np.ndarray: #  loading an image failed
-               return ParameterSet(pe)
+                try:
+                    # is it the URL of a file containing a dict?
+                    return ParameterSet(pe)
+                except:
+                    # is it just the name of a file containing a dict?
+                    return ParameterSet('file://' + pe)
             else:
-               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
+                return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
             print('error finding parameters')
             return ParameterSet({'N_X':0, 'N_Y':0})
