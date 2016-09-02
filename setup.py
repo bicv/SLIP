@@ -4,7 +4,7 @@
 from setuptools import setup, find_packages
 
 NAME = "SLIP"
-version = "0.3.7" # << to change in Makefile
+version = "0.3.8" # << to change in Makefile
 
 setup(
     name = NAME,
