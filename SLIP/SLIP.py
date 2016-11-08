@@ -688,10 +688,12 @@ class Image:
             ax.add_patch(circ)
         return fig, ax
 
-    def show_image_FT(self, image, FT_image, fig=None, figsize=8., a1=None, a2=None, axis=False,
+    def show_image_FT(self, image, FT_image, fig=None, figsize=None, a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             vmin=-1., vmax=1.):
-        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize/2))
+        if figsize is None:
+            figsize = (self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize/2)
+        if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
         fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)

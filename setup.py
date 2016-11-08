@@ -10,7 +10,7 @@ setup(
     name = NAME,
     version = version,
     packages = find_packages(exclude=['contrib', 'docs', 'tests']),
-     author = "Laurent Perrinet INT - CNRS",
+    author = "Laurent Perrinet INT - CNRS",
     author_email = "Laurent.Perrinet@univ-amu.fr",
     description = "SLIP: a Simple Library for Image Processing",
     long_description=open("README.md").read(),
