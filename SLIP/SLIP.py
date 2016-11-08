@@ -36,25 +36,22 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
 
 
     """
-    try:
-        import imageio
-        image = imageio.imread(URL)
-        if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 255.
-        image = np.array(image, dtype=np.float)
-        if image.ndim > 3:
-            return 'dimension higher than 3'
-        if image.ndim == 3:
-            if image.shape[2]==4: # discard alpha channel
-                image = image[:, :, :3] * image[:, :, -1, np.newaxis]
-            if image.shape[2] > 4:
-                return 'imread : more than 4 channels, have you imported a video?'
-            if grayscale is True:
-                image *= np.array(rgb2gray)[np.newaxis, np.newaxis, :]
-                image = image.sum(axis=-1) # convert to grayscale
+    import imageio
+    image = imageio.imread(URL)
+    if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 256.
+    image = np.array(image, dtype=np.float)
+    if image.ndim > 3:
+        raise ValueError('dimension higher than 3')
+    if image.ndim == 3:
+        if image.shape[2]==4: # discard alpha channel
+            image = image[:, :, :3] * image[:, :, -1, np.newaxis]
+        if image.shape[2] > 4:
+            raise ValueError('imread : more than 4 channels, have you imported a video?')
+        if grayscale is True:
+            image *= np.array(rgb2gray)[np.newaxis, np.newaxis, :]
+            image = image.sum(axis=-1) # convert to grayscale
 
-        return image
-    except:
-        return 'could not return an image'
+    return image
 
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
 import os
@@ -132,9 +129,10 @@ class Image:
         elif type(pe) is np.ndarray:
             return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
-            # is it the URL of an image?
-            im = imread(pe)
-            if not type(im) is np.ndarray: #  loading an image failed
+            try:
+                # is it the URL of an image?
+                im = imread(pe)
+            except: #  loading an image failed
                 try:
                     # is it the URL of a file containing a dict?
                     return ParameterSet(pe)
@@ -693,6 +691,7 @@ class Image:
             vmin=-1., vmax=1.):
         if figsize is None:
             figsize = (self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize/2)
+        print(figsize)
         if fig is None: fig = plt.figure(figsize=figsize)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
