@@ -660,7 +660,7 @@ class Image:
         return f_bins, theta_bins, F_rot
 
     def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='Y axis', ylabel='X axis', figsize=8., mask=False, vmin=-1, vmax=1):
+            xlabel='Y axis', ylabel='X axis', figsize=None, mask=False, vmin=-1, vmax=1):
         """
         Plotting routine to show an image
 
@@ -668,9 +668,15 @@ class Image:
         Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
 
         """
-        if not 'figsize' in self.pe.keys(): self.pe.figsize = figsize
 
-        if fig is None: fig = plt.figure(figsize=(self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize))
+        if fig is None:
+            if figsize is None:
+                if not 'figsize' in self.pe.keys():
+                    figsize_default = 14.
+                else:
+                    figsize_default = self.pe.figsize
+                figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default)
+            fig = plt.figure(figsize=figsize_tuple)
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
         ax.pcolor(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax))
@@ -689,10 +695,14 @@ class Image:
     def show_image_FT(self, image, FT_image, fig=None, figsize=None, a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
             vmin=-1., vmax=1.):
-        if figsize is None:
-            figsize = (self.pe.figsize*self.pe.N_Y/self.pe.N_X, self.pe.figsize/2)
-        print(figsize)
-        if fig is None: fig = plt.figure(figsize=figsize)
+        if fig is None:
+            if figsize is None:
+                if not 'figsize' in self.pe.keys():
+                    figsize_default = 14.
+                else:
+                    figsize_default = self.pe.figsize
+                figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default/2)
+            fig = plt.figure(figsize=figsize_tuple)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
         fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
@@ -713,14 +723,14 @@ class Image:
         a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, figsize=8., a1=None, a2=None, axis=False,
+    def show_FT(self, FT_image, fig=None, figsize=None, a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         image = self.invert(FT_image)#, phase=phase)
         fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, figsize=8., a1=None, a2=None, axis=False,
+    def show_spectrum(self, image, fig=None, figsize=None, a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         FT_image = np.absolute(self.fourier(image, full=False))
         fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
