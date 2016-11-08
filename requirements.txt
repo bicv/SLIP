@@ -1,7 +1,8 @@
 numpy
-IPython
 imageio
 scipy
+NeuroTools
 matplotlib
 IPython
-NeuroTools
+watermark
+version_information
