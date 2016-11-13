@@ -676,6 +676,8 @@ class Image:
                 else:
                     figsize_default = self.pe.figsize
                 figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default)
+            else:
+                figsize_tuple = figsize
             fig = plt.figure(figsize=figsize_tuple)
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
@@ -702,6 +704,8 @@ class Image:
                 else:
                     figsize_default = self.pe.figsize
                 figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default/2)
+            else:
+                figsize_tuple = figsize
             fig = plt.figure(figsize=figsize_tuple)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)

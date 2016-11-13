@@ -1,6 +1,6 @@
 .ipynb_checkpoints/
 MANIFEST
-cache
+data_cache
 results
 web.zip
 .DS_Store

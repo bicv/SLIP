@@ -4,9 +4,9 @@
 'N_Y' : 256, # size of images
 'do_mask'  : False, # used forinstance in the Matching Pursuit algorithm self.pe.do_mask
 'mask_exponent': 3., #sharpness of the mask
-'figpath': 'results/',
-'matpath': 'cache/',
-'datapath': 'database/',
+'figpath': 'results',
+'matpath': 'data_cache',
+'datapath': 'database',
 'ext' : '.pdf',
 'figsize': 14.,
 'seed': None, # a seed for the Random Number Generator (RNG) for picking images in databases, set to None or a given number to freeze the RNG
