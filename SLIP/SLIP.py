@@ -681,7 +681,7 @@ class Image:
             fig = plt.figure(figsize=figsize_tuple)
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
-        ax.pcolor(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax))
+        ax.pcolormesh(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax), edgecolor='none')
         if not(axis):
             plt.setp(ax, xticks=[], yticks=[])
         else:
