@@ -1,6 +1,6 @@
 default: pypi_docs
 NAME = SLIP
-VERSION=`python -c'import MotionClouds; print(SLIP.__version__)'`
+VERSION=`python -c'import SLIP; print(SLIP.__version__)'`
 
 edit:
 	mvim -p setup.py src/__init__.py src/$(NAME).py README.md Makefile requirements.txt
