@@ -14,14 +14,14 @@ pypi_tags:
 	git push --tags origin master
 
 pypi_push:
-	python setup.py register
+	python3 setup.py register
 
 pypi_upload:
-	python setup.py sdist upload
+	python3 setup.py sdist upload
 
 pypi_docs:
 	#rm web.zip
-	#ipython nbconvert --to html $(NAME).ipynb
+	#ipython3 nbconvert --to html $(NAME).ipynb
 	#mv $(NAME).html index.html
 	#runipy $(NAME).ipynb  --html  index.html
 	zip web.zip index.html
@@ -37,7 +37,7 @@ todo:
 	runipy $< --html $@
 
 %.pdf: %.ipynb
-	ipython nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to latex --post PDF $<
+	ipython3 nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to latex --post PDF $<
 
 # cleaning macros
 clean_tmp:
