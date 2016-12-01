@@ -1,7 +1,7 @@
 .ipynb_checkpoints/
 MANIFEST
-figures/
-mat/
+data_cache
+results
 web.zip
 .DS_Store
 # Byte-compiled / optimized / DLL files

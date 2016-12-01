@@ -4,21 +4,28 @@
 from setuptools import setup, find_packages
 
 NAME = "SLIP"
-version = "0.2"
+import SLIP
+VERSION = SLIP.__version__ # << to change in __init__.py
 
 setup(
     name = NAME,
-    version = version,
-    packages=find_packages('src', exclude='docs'),
-    package_dir = {'': 'src'},
+    version = VERSION,
+    packages = find_packages(exclude=['contrib', 'docs', 'tests']),
     author = "Laurent Perrinet INT - CNRS",
     author_email = "Laurent.Perrinet@univ-amu.fr",
-    description = "SLIP: a Simple Library for Image Processing.",
+    description = "SLIP: a Simple Library for Image Processing",
     long_description=open("README.md").read(),
     license = "GPLv2",
-    keywords = ('computational neuroscience', 'simulation', 'analysis', 'visualization', 'computer vision'),
-    url = 'https://github.com/meduz/' + NAME, # use the URL to the github repo
-    download_url = 'https://github.com/meduz/' + NAME + '/tarball/' + version,
+    install_requires=['numpy', 'NeuroTools'],
+    extras_require={
+                'html' : [
+                         'vispy',
+                         'matplotlib'
+                         'jupyter>=1.0']
+    },
+    keywords = ('computational neuroscience', 'simulation', 'analysis', 'visualization', 'biologically-inspired', 'computer vision'),
+    url = 'https://github.com/bicv/' + NAME, # use the URL to the github repo
+    download_url = 'https://github.com/bicv/' + NAME + '/tarball/' + VERSION,
     classifiers = ['Development Status :: 3 - Alpha',
                    'Environment :: Console',
                    'License :: OSI Approved :: GNU General Public License (GPL)',

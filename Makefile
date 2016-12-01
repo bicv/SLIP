@@ -1,34 +1,34 @@
 default: pypi_docs
 NAME = SLIP
+VERSION=`python3 -c'import SLIP; import matplotlib; print(SLIP.__version__)'`
 
 edit:
 	mvim -p setup.py src/__init__.py src/$(NAME).py README.md Makefile requirements.txt
 
-pypi_all: pypi_tags pypi_push pypi_upload pypi_docs
+pypi_all: pypi_tags pypi_push pypi_upload
 # https://docs.python.org/2/distutils/packageindex.html
 pypi_tags:
 	git commit -am' tagging for PyPI '
 	# in case you wish to delete tags, visit http://wptheming.com/2011/04/add-remove-github-tags/
-	git tag 0.2 -m "Adds a tag so that we can put this on PyPI."
+	git tag $(VERSION) -m "Adds a tag so that we can put this on PyPI."
 	git push --tags origin master
 
 pypi_push:
-	python setup.py register
+	python3 setup.py register
 
 pypi_upload:
-	python setup.py sdist upload
+	python3 setup.py sdist upload
 
 pypi_docs:
-	rm web.zip
-	#ipython nbconvert --to html $(NAME).ipynb
+	#rm web.zip
+	#ipython3 nbconvert --to html $(NAME).ipynb
 	#mv $(NAME).html index.html
 	#runipy $(NAME).ipynb  --html  index.html
 	zip web.zip index.html
 	open https://pypi.python.org/pypi?action=pkg_edit&name=$NAME
 
 install_dev:
-	pip uninstall -y $(NAME)
-	pip install -e .
+	pip3 uninstall -y $(NAME) ; pip3 install -e .
 todo:
 	grep -R * (^|#)[ ]*(TODO|FIXME|XXX|HINT|TIP)( |:)([^#]*)
 
@@ -37,7 +37,7 @@ todo:
 	runipy $< --html $@
 
 %.pdf: %.ipynb
-	ipython nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to latex --post PDF $<
+	ipython3 nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to latex --post PDF $<
 
 # cleaning macros
 clean_tmp:

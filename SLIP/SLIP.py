@@ -7,6 +7,52 @@ See http://pythonhosted.org/SLIP
 
 """
 import numpy as np
+
+def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
+    """
+    Loads whatever image. Returns a grayscale (2D) image.
+
+    Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
+
+    These scalar values correspond to the grayscale luminance: "The intensity of a pixel is expressed within a given range between a minimum and a maximum, inclusive. This range is represented in an abstract way as a range from 0 (total absence, black) and 1 (total presence, white), with any fractional values in between." This range is here between 0 and 1.
+
+    If ``grayscale`` is True, a grayscale image is obtained by summing over channels following the formula:
+
+    Y  = 0.2989 * R + 0.5870 * G + 0.1140 * B
+
+    http://docs.opencv.org/2.4/modules/imgproc/doc/miscellaneous_transformations.html#cvtcolor
+    which corresponds to the definition of luma:
+    http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html#RTFToC11
+
+    This function tries to guess at best the range and format.
+    If that fails, returns a string with the error message.
+
+    TODO: the above formula is an approximation of the official conversion:
+
+        Y = 0.2126 * R + 0.7152 * G + 0.0722 * B
+
+    in the linear RGB space.
+    (see https://en.wikipedia.org/wiki/Grayscale#Colorimetric_.28luminance-preserving.29_conversion_to_grayscale)
+
+
+    """
+    import imageio
+    image = imageio.imread(URL)
+    if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 256.
+    image = np.array(image, dtype=np.float)
+    if image.ndim > 3:
+        raise ValueError('dimension higher than 3')
+    if image.ndim == 3:
+        if image.shape[2]==4: # discard alpha channel
+            image = image[:, :, :3] * image[:, :, -1, np.newaxis]
+        if image.shape[2] > 4:
+            raise ValueError('imread : more than 4 channels, have you imported a video?')
+        if grayscale is True:
+            image *= np.array(rgb2gray)[np.newaxis, np.newaxis, :]
+            image = image.sum(axis=-1) # convert to grayscale
+
+    return image
+
 from numpy.fft import fft2, fftshift, ifft2, ifftshift
 import os
 # -------------------------------------------
@@ -16,42 +62,19 @@ import time
 
 import pickle
 import matplotlib.pyplot as plt
+import matplotlib
 from NeuroTools.parameters import ParameterSet
 import logging
-
-def imread(URL):
-    """
-    Loads an image.
-
-    Returns an image. If that fails, retunrs a string with the error message
-
-    """
-    import imageio
-    try:
-        image = np.array(imageio.imread(URL), dtype=np.float)
-    except:
-        return 'failed opening '+ URL
-
-    if image.ndim > 3:
-        return 'dimension higher than 3'
-    if image.ndim == 3:
-        if image.shape[2]==4: # discard alpha channel
-            image = image[..., :3]
-        if image.shape[2] > 4:
-            return 'imread : more than 4 channels, have you imported a video?'
-        # TODO : RGB correction
-        image = image.sum(axis=-1) # convert to grayscale
-    return image
 
 class Image:
     """
     This library collects different Image Processing tools.
 
-    Fork me on https://github.com/meduz/SLIP !
+    Fork me on https://github.com/bicv/SLIP !
 
     This library is used in other projects, in particular  for use with the ``LogGabor`` and ``SparseEdges`` libraries
-    For more information check respective pages @ 
-        - http://pythonhosted.org/LogGabor and 
+    For more information check respective pages @
+        - http://pythonhosted.org/LogGabor and
         - http://pythonhosted.org/SparseEdges
 
     Collects image processing routines for one given image size:
@@ -68,31 +91,35 @@ class Image:
         - load_in_database : loads a random image in a folder and
         - patch : takes a random patch of the correct size
     """
-    def __init__(self, pe={'N_X':128, 'N_Y':128}):
+    def __init__(self, pe='https://raw.githubusercontent.com/bicv/SLIP/master/default_param.py'):
         """
         Initializes the Image class
 
         May take as input:
 
-        - a dictionary containing parameters 
+        - a dictionary containing parameters
         - a ``ndarray`` (dimensions ``N_X`` and ``N_Y`` are guessed from this array)
         - a string representing a file or URL pointing to an image file
-        - a string pointing to  a file or URL containing a dictionary of parameters 
-        - a ``NeuroTools.parameters.ParameterSet`` object containing parameters 
+        - a string pointing to  a file or URL containing a dictionary of parameters (or simply the name of the file)
+        - a ``NeuroTools.parameters.ParameterSet`` object containing parameters
 
-        Parameters are 
+        Parameters are
 
         - N_X and N_Y which are respectively the number of pixels in the vertical and horizontal dimensions respectively (MANDATORY)
         - optional parameters which are used in the various functions such as N_image when handling a database or the whitening parameters.
 
         """
-
         self.pe = self.get_pe(pe)
-        self.N_X = self.pe.N_X # n_x
-        self.N_Y = self.pe.N_Y # n_y
+        self.init_logging()
         self.init()
 
     def get_pe(self, pe):
+        """
+        Guesses the parameters from the init variable
+
+        We perform a duck-typing to guess parameters from different possible sources.
+        outputs a ParameterSet
+        """
         if type(pe) is tuple:
             return ParameterSet({'N_X':pe[0], 'N_Y':pe[1]})
         elif type(pe) is ParameterSet:
@@ -102,13 +129,39 @@ class Image:
         elif type(pe) is np.ndarray:
             return ParameterSet({'N_X':pe.shape[0], 'N_Y':pe.shape[1]})
         elif type(pe) is str:
-            im = imread(pe)
-            if not type(im) is np.ndarray: #  loading an image failed
-               return ParameterSet(pe)
+            try:
+                # is it the URL of an image?
+                im = imread(pe)
+            except: #  loading an image failed
+                try:
+                    # is it the URL of a file containing a dict?
+                    return ParameterSet(pe)
+                except:
+                    # is it just the name of a file containing a dict?
+                    return ParameterSet('file://' + pe)
             else:
-               return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
+                return ParameterSet({'N_X':im.shape[0], 'N_Y':im.shape[1]})
         else:
-            self.log.error('could not guess what the init variable is')
+            print('error finding parameters')
+            return ParameterSet({'N_X':0, 'N_Y':0})
+
+    def init_logging(self, filename='debug.log', name="SLIP"):
+        try:
+            PID = os.getpid()
+        except:
+            PID = 'N/A'
+        try:
+            HOST = os.uname()[1]
+        except:
+            HOST = 'N/A'
+        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
+        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
+        self.log = logging.getLogger(name)
+        try:
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
+        except:
+            self.pe.verbose = logging.WARN
+            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
     def get_size(self, im):
         if type(im) is tuple:
@@ -127,21 +180,21 @@ class Image:
         - a string representing a file or URL pointing to an image file
         - a tuple
 
-        Updated parameters are 
+        Updated parameters are
 
         - N_X and N_Y which are respectively the number of pixels in the vertical and horizontal dimensions respectively (MANDATORY)
 
         """
         try: # to read pe as a tuple
-            self.N_X, self.N_Y = self.get_size(im)
+            self.pe.N_X, self.pe.N_Y = self.get_size(im)
         except:
-            self.log.error('Could not set the size of the SLIP object') 
-        self.pe.N_X = self.N_X # n_x
-        self.pe.N_Y = self.N_Y # n_y
+            self.log.error('Could not set the size of the SLIP object')
+        self.pe.N_X = self.pe.N_X # n_x
+        self.pe.N_Y = self.pe.N_Y # n_y
         self.init()
 
-    def init(self):
-        """ 
+    def init(self, mask_exponent=3.):
+        """
         Initializes different convenient matrices for image processing.
 
         To be called when keeping the same Image object but changing the size of the image.
@@ -151,32 +204,15 @@ class Image:
         self.f = self.frequency_radius()
         self.f_theta = self.frequency_angle()
 
-        self.x, self.y = np.mgrid[-1:1:1j*self.N_X, -1:1:1j*self.N_Y]
+        self.x, self.y = np.mgrid[-1:1:1j*self.pe.N_X, -1:1:1j*self.pe.N_Y]
         self.R = np.sqrt(self.x**2 + self.y**2)
-        self.mask = (np.cos(np.pi*self.R)+1)/2 *(self.R < 1.)
+        if not 'mask_exponent' in self.pe.keys(): self.pe.mask_exponent = mask_exponent
+        self.mask = ((np.cos(np.pi*self.R)+1)/2 *(self.R < 1.))**(1./self.pe.mask_exponent)
         self.f_mask = self.retina()
-        self.X, self.Y  = np.meshgrid(np.arange(self.N_X), np.arange(self.N_Y))
-
-        if not 'verbose' in self.pe.keys():
-            self.pe.verbose = logging.WARN
-        self.init_logging()
-
-    def init_logging(self, filename='debug.log', name="SLIP"):
-        try:
-            PID = os.getpid()
-        except:
-            PID = 'N/A'
-        try:
-            HOST = os.uname()[1]
-        except:
-            HOST = 'N/A'
-        self.TAG = 'host-' + HOST + '_pid-' + str(PID)
-        logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y%m%d-%H:%M:%S')
-        self.log = logging.getLogger(name)
-        self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
+        self.X, self.Y  = np.meshgrid(np.arange(self.pe.N_X), np.arange(self.pe.N_Y))
 
     def mkdir(self):
-        """ 
+        """
         Initializes two folders for storing intermediate matrices and images.
 
         To be called before any operation to store or retrieve a result or figure.
@@ -199,7 +235,7 @@ class Image:
             # TODO: use a list of authorized file types
             GARBAGE = ['.AppleDouble', '.DS_Store'] # MacOsX stuff
             filelist = os.listdir(self.full_url(name_database))
-            for garbage in GARBAGE: 
+            for garbage in GARBAGE:
                 if garbage in filelist: filelist.remove(garbage)
             return filelist
         except:
@@ -209,7 +245,7 @@ class Image:
     def imread(self, URL, resize=True):
         image = imread(URL)
         if type(image) is str: self.log.error(image)
-        elif resize and (self.N_X is not image.shape[0] or self.N_Y is not image.shape[1]):
+        elif resize and (self.pe.N_X is not image.shape[0] or self.pe.N_Y is not image.shape[1]):
             self.set_size(image)
         return image
 
@@ -310,28 +346,28 @@ class Image:
 
         if (croparea is None):
             image_size_h, image_size_v = image.shape
-            if self.N_X > image_size_h or self.N_Y > image_size_v:
-                print('N_X patch_h patch_v  ', self.N_X, image_size_h, image_size_v)
+            if self.pe.N_X > image_size_h or self.pe.N_Y > image_size_v:
+                print('N_X N_Y patch_v patch_h  ', self.pe.N_X, self.pe.N_Y, image_size_h, image_size_v)
                 raise Exception('Patch size too big for the image in your DB')
-            elif self.N_X == image_size_h or self.N_Y == image_size_v:
-                return image, filename, [0, self.N_X, 0, self.N_Y]
+            elif self.pe.N_X == image_size_h or self.pe.N_Y == image_size_v:
+                return image, filename, [0, self.pe.N_X, 0, self.pe.N_Y]
             else:
                 energy = image.std()
                 energy_ = 0
 
                 while energy_ < threshold*energy:
                     #if energy_ > 0: print 'dropped patch'
-                    x_rand = int(np.ceil((image_size_h-self.N_X)*np.random.rand()))
-                    y_rand = int(np.ceil((image_size_v-self.N_Y)*np.random.rand()))
-                    image_ = image[(x_rand):(x_rand+self.N_X), (y_rand):(y_rand+self.N_Y)]
+                    x_rand = int(np.ceil((image_size_h-self.pe.N_X)*np.random.rand()))
+                    y_rand = int(np.ceil((image_size_v-self.pe.N_Y)*np.random.rand()))
+                    image_ = image[(x_rand):(x_rand+self.pe.N_X), (y_rand):(y_rand+self.pe.N_Y)]
                     energy_ = image_[:].std()
 
-                if verbose: print('Cropping @ [left, right, bottom, top]: ', [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y])
+                if verbose: print('Cropping @ [top, bottom, left, right]: ', [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y])
 
-                croparea = [x_rand, x_rand+self.N_X, y_rand, y_rand+self.N_Y]
+                croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
-        if self.pe.do_mask: image_ *= self.mask
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
+        if self.pe.do_mask: image_ *= self.mask
         return image_, filename, croparea
 
     def normalize(self, image, preprocess=True, center=True, use_max=True):
@@ -366,8 +402,8 @@ class Image:
         # transforms and their frequencies to put the zero-frequency components in the
         # middle, and np.fft.ifftshift(A) undoes that shift.
         #
-        fx, fy = np.mgrid[(-self.N_X//2):((self.N_X-1)//2 + 1), (-self.N_Y//2):((self.N_Y-1)//2 + 1)]
-        fx, fy = fx*1./self.N_X, fy*1./self.N_Y
+        fx, fy = np.mgrid[(-self.pe.N_X//2):((self.pe.N_X-1)//2 + 1), (-self.pe.N_Y//2):((self.pe.N_Y-1)//2 + 1)]
+        fx, fy = fx*1./self.pe.N_X, fy*1./self.pe.N_Y
         return fx, fy
 
 #     def expand_complex(self, FT, hue=False):
@@ -395,7 +431,7 @@ class Image:
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
-        R2[self.N_X//2 , self.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
+        R2[self.pe.N_X//2 , self.pe.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
     def frequency_angle(self):
@@ -409,7 +445,7 @@ class Image:
         else:
             f_radius = np.zeros(self.f.shape)
             f_radius = self.f**alpha
-            f_radius[(self.N_X-1)//2 + 1 , (self.N_Y-1)//2 + 1 ] = np.inf
+            f_radius[(self.pe.N_X-1)//2 + 1 , (self.pe.N_Y-1)//2 + 1 ] = np.inf
             return 1. / f_radius
 
     # Fourier number crunching
@@ -440,11 +476,13 @@ class Image:
 
     def trans(self, u, v):
         return np.exp(-1j*2*np.pi*(u*self.f_x + v*self.f_y))
-#         return np.exp(-1j*2*np.pi*(u/self.N_X*self.f_x + v/self.N_Y*self.f_y))
+#         return np.exp(-1j*2*np.pi*(u/self.pe.N_X*self.f_x + v/self.pe.N_Y*self.f_y))
 
-    def translate(self, image, vec, preshift=False):
+    def translate(self, image, vec, preshift=True):
         """
         Translate image by vec (in pixels)
+
+        Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
 
         """
         u, v = vec
@@ -465,7 +503,7 @@ class Image:
         See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
         for more information.
 
-        In digital images, some of the energy in Fourier space is concentrated outside the 
+        In digital images, some of the energy in Fourier space is concentrated outside the
         disk corresponding to the Nyquist frequency. Let's design a filter with:
 
             - a sharp cut-off for radial frequencies higher than the Nyquist frequency,
@@ -478,13 +516,13 @@ class Image:
             - one for scaling the smoothness of the transition in the high-frequency range,
             - one for the characteristic length of the high-pass filter.
 
-        The first is defined relative to the Nyquist frequency (in absolute values) while the second 
+        The first is defined relative to the Nyquist frequency (in absolute values) while the second
         is relative to the size of the image in pixels and is given in number of pixels.
         """
         # removing high frequencies in the corners
         env = (1-np.exp((self.f-.5)/(.5*df)))*(self.f<.5)
         # removing low frequencies
-        env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.N_X)**2))
+        env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.pe.N_X)**2))
         return env
 
     def olshausen_whitening_filt(self):
@@ -530,7 +568,7 @@ class Image:
             then we return a 1/f spectrum based on the assumption that the structure of images
             is self-similar and thus that the Fourier spectrum scales a priori in 1/f.
 
-        elif we chose to learn, 
+        elif we chose to learn,
             returns theaverage correlation filter in FT space.
 
             Computes the average power spectrum = FT of cross-correlation, the mean decorrelation
@@ -542,7 +580,7 @@ class Image:
         """
         if self.pe.white_n_learning>0:
             try:
-                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'))
+                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'))
                 if recompute:
                     raise('Recomputing the whitening filter')
             except:
@@ -560,7 +598,7 @@ class Image:
                 K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.white_steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
                 self.mkdir()
-                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.N_X) + '-' + str(self.N_Y) + '.npy'), K)
+                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'), K)
         else:
             K = self.olshausen_whitening_filt()
         return K
@@ -573,7 +611,7 @@ class Image:
         the objects in the image. In particular, we want to avoid:
 
             - information that would not be uniformly distributed when rotating the image. In
-            particular, we discard information outside the unit disk in Fourier space, in particular 
+            particular, we discard information outside the unit disk in Fourier space, in particular
             above the Nyquist frequency,
             - information that relates to information of the order the size of the image. This
             involves discarding information at low-level frequencies.
@@ -602,7 +640,7 @@ class Image:
     def hist_radial_frequency(self, FT, N_f = 20):
         """
         A simple function to compute a radial histogram in different spatial frequency bands.
-        
+
         """
          #F.shape[0]/2 # making an histogram with N_f bins
         f_bins = np.linspace(0., 0.5, N_f+1)
@@ -622,63 +660,86 @@ class Image:
         F_rot /= F_rot.max()
         return f_bins, theta_bins, F_rot
 
-# plotting routines
-#         origin : [‘upper’ | ‘lower’], optional, default: None
-#         Place the [0,0] index of the array in the upper left or lower left corner of the axes. If None, default to rc image.origin.
-#         extent : scalars (left, right, bottom, top), optional, default: None
-#         Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
     def imshow(self, image, fig=None, ax=None, cmap=plt.cm.gray, axis=False, norm=True, center=True,
-            xlabel='X axis', ylabel='Y axis', figsize=(8, 8),
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        if fig is None: fig = plt.figure(figsize=figsize)
+            xlabel='Y axis', ylabel='X axis', figsize=None, mask=False, vmin=-1, vmax=1):
+        """
+        Plotting routine to show an image
+
+        Place the [0,0] index of the array in the upper left  corner of the axes. Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
+        Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
+
+        """
+
+        if fig is None:
+            if figsize is None:
+                if not 'figsize' in self.pe.keys():
+                    figsize_default = 14.
+                else:
+                    figsize_default = self.pe.figsize
+                figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default)
+            else:
+                figsize_tuple = figsize
+            fig = plt.figure(figsize=figsize_tuple)
         if ax is None: ax = fig.add_subplot(111)
         if norm: image = self.normalize(image, center=True, use_max=True)
-        ax.imshow(image, cmap=cmap, **opts)
+        ax.pcolormesh(image, cmap=cmap, norm=matplotlib.colors.Normalize(vmin=vmin, vmax=vmax), edgecolor='none')
         if not(axis):
             plt.setp(ax, xticks=[], yticks=[])
         else:
-            ax.set_ylabel(xlabel)
-            ax.set_xlabel(ylabel)
-            #plt.colorbar()
-        ax.axis([0, self.N_X, self.N_Y, 0])
+            ax.set_ylabel(ylabel)
+            ax.set_xlabel(xlabel)
+        ax.axis([0, self.pe.N_Y-1, self.pe.N_X-1, 0])
+        if mask:
+            linewidth_mask = 1 # HACK
+            circ = plt.Circle((.5*self.pe.N_Y, .5*self.pe.N_Y), radius=0.5*self.pe.N_Y-linewidth_mask/2., fill=False, facecolor='none', edgecolor = 'black', alpha = 0.5, ls='dashed', lw=linewidth_mask)
+            ax.add_patch(circ)
         return fig, ax
 
-    def show_image_FT(self, image, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
+    def show_image_FT(self, image, FT_image, fig=None, figsize=None, a1=None, a2=None, axis=False,
             title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
-        if fig is None: fig = plt.figure(figsize=figsize)
+            vmin=-1., vmax=1.):
+        if fig is None:
+            if figsize is None:
+                if not 'figsize' in self.pe.keys():
+                    figsize_default = 14.
+                else:
+                    figsize_default = self.pe.figsize
+                figsize_tuple = (figsize_default*self.pe.N_Y/self.pe.N_X, figsize_default/2)
+            else:
+                figsize_tuple = figsize
+            fig = plt.figure(figsize=figsize_tuple)
         if a1 is None: a1 = fig.add_subplot(121)
         if a2 is None: a2 = fig.add_subplot(122)
-        fig, a1 = self.imshow(np.absolute(FT_image), fig=fig, ax=a1, cmap=plt.cm.hsv, norm=norm, axis=axis, opts=opts)
-        fig, a2 = self.imshow(image, fig=fig, ax=a2, cmap=plt.cm.gray, norm=norm, axis=axis, opts=opts)
+        fig, a1 = self.imshow(np.absolute(FT_image)/np.absolute(FT_image).max()*2-1, fig=fig, ax=a1, cmap=plt.cm.hot, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
+        fig, a2 = self.imshow(image, fig=fig, ax=a2, cmap=plt.cm.gray, norm=norm, axis=axis, vmin=vmin, vmax=vmax)
         if title:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
         if not(axis):
-            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=[''], yticklabels=[''])
+            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=[''], yticklabels=[''])
             plt.setp(a2, xticks=[], yticks=[])
         else:
-            plt.setp(a1, xticks=[self.N_X/2], yticks=[self.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
-            plt.setp(a2, xticks=np.linspace(0, self.N_X, 5), yticks=np.linspace(0, self.N_Y, 5))
+            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
+            plt.setp(a2, xticks=np.linspace(0, self.pe.N_X, 5), yticks=np.linspace(0, self.pe.N_Y, 5))
+            plt.setp(a1, xlabel=r'$f_x$', ylabel=r'$f_y$')
+            plt.setp(a2, xlabel=r'$f_x$', ylabel=r'$f_y$')
 
-        a1.axis([0, self.N_X, self.N_Y, 0])
-        a2.axis([0, self.N_X, self.N_Y, 0])
+        a1.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
+        a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         return fig, a1, a2
 
-    def show_FT(self, FT_image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
-            title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+    def show_FT(self, FT_image, fig=None, figsize=None, a1=None, a2=None, axis=False,
+            title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         image = self.invert(FT_image)#, phase=phase)
         fig, a1, a2 = self.show_image_FT(image, FT_image, fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
-                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def show_spectrum(self, image, fig=None, figsize=(14, 14*10/16), a1=None, a2=None, axis=False, 
-            title=True, FT_title='Spectrum', im_title='Image', norm=True,
-            opts={'vmin':-1., 'vmax':1., 'interpolation':'nearest', 'origin':'upper'}):
+    def show_spectrum(self, image, fig=None, figsize=None, a1=None, a2=None, axis=False,
+            title=True, FT_title='Spectrum', im_title='Image', norm=True, vmin=-1., vmax=1.):
         FT_image = np.absolute(self.fourier(image, full=False))
-        fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis, 
-                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, opts=opts)
+        fig, a1, a2 = self.show_image_FT(image, FT_image , fig=fig, figsize=figsize, a1=a1, a2=a2, axis=axis,
+                                    title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
 def _test():
@@ -695,5 +756,3 @@ if __name__ == '__main__':
 
     """
     im = Image('database/gris512.png')
-    
-
