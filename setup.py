@@ -25,7 +25,7 @@ setup(
     },
     keywords = ('computational neuroscience', 'simulation', 'analysis', 'visualization', 'biologically-inspired', 'computer vision'),
     url = 'https://github.com/bicv/' + NAME, # use the URL to the github repo
-    download_url = 'https://github.com/bicv/' + NAME + '/tarball/' + version,
+    download_url = 'https://github.com/bicv/' + NAME + '/tarball/' + VERSION,
     classifiers = ['Development Status :: 3 - Alpha',
                    'Environment :: Console',
                    'License :: OSI Approved :: GNU General Public License (GPL)',

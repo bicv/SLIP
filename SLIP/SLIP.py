@@ -365,8 +365,8 @@ class Image:
 
                 croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
-        if self.pe.do_mask: image_ *= self.mask
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
+        if self.pe.do_mask: image_ *= self.mask
         return image_, filename, croparea
 
     def normalize(self, image, preprocess=True, center=True, use_max=True):
