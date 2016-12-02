@@ -350,7 +350,7 @@ class Image:
                 print('N_X N_Y patch_v patch_h  ', self.pe.N_X, self.pe.N_Y, image_size_h, image_size_v)
                 raise Exception('Patch size too big for the image in your DB')
             elif self.pe.N_X == image_size_h or self.pe.N_Y == image_size_v:
-                return image, filename, [0, self.pe.N_X, 0, self.pe.N_Y]
+                croparea = [0, self.pe.N_X, 0, self.pe.N_Y]
             else:
                 energy = image.std()
                 energy_ = 0
@@ -361,18 +361,19 @@ class Image:
                     y_rand = int(np.ceil((image_size_v-self.pe.N_Y)*np.random.rand()))
                     image_ = image[(x_rand):(x_rand+self.pe.N_X), (y_rand):(y_rand+self.pe.N_Y)]
                     energy_ = image_[:].std()
-
-                if verbose: print('Cropping @ [top, bottom, left, right]: ', [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y])
-
+                if verbose: print('Cropping @ [top, bottom, left, right]: ',
+                                   [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y])
                 croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
+
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
         if self.pe.do_mask: image_ *= self.mask
         return image_, filename, croparea
 
     def normalize(self, image, preprocess=True, center=True, use_max=True):
-        if preprocess: image_ = self.preprocess(image)
-        if center: image_ -= image_.mean()
+        image_ = image.copy()
+        if center: image_ -= np.median(image_)
+        if preprocess: image_ = self.preprocess(image_)
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
         else:
@@ -665,8 +666,13 @@ class Image:
         """
         Plotting routine to show an image
 
-        Place the [0,0] index of the array in the upper left  corner of the axes. Data limits for the axes. The default assigns zero-based row, column indices to the x, y centers of the pixels.
-        Note that the convention for coordinates follows that of matrices: the origin is at the top left of the image, and coordinates are first the rows (vertical axis, going down) then the columns (horizontal axis, going right).
+        Place the [0,0] index of the array in the upper left  corner of the axes.
+        Data limits for the axes. The default assigns zero-based row, column
+        indices to the x, y centers of the pixels.
+        Note that the convention for coordinates follows that of matrices: the
+        origin is at the top left of the image, and coordinates are first the
+        rows (vertical axis, going down) then the columns (horizontal axis,
+        going right).
 
         """
 
