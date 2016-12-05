@@ -579,13 +579,15 @@ class Image:
             we return the parametrization based on Olshausen, 1996
 
         """
+        def fname():
+            return os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy')
         if self.pe.white_n_learning>0:
             try:
-                K = np.load(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'))
+                K = np.load(fname())
                 if recompute:
                     raise('Recomputing the whitening filter')
             except:
-                print(' Learning the whitening filter')
+                print('👾 Learning the whitening filter')
                 power_spectrum = 0. # power spectrum
                 for i_learning in range(self.pe.white_n_learning):
                     image, filename, croparea = self.patch(self.pe.white_name_database, verbose=False)
@@ -599,7 +601,7 @@ class Image:
                 K *= self.low_pass(f_0 = self.pe.white_f_0, steepness = self.pe.white_steepness)
                 K /= np.mean(K) # normalize energy :  DC is one <=> xcorr(0) = 1
                 self.mkdir()
-                np.save(os.path.join(self.pe.matpath, 'white'+ str(self.pe.N_X) + '-' + str(self.pe.N_Y) + '.npy'), K)
+                np.save(fname(), K)
         else:
             K = self.olshausen_whitening_filt()
         return K
