@@ -6,6 +6,7 @@ NAME = "SLIP"
 import SLIP
 VERSION = SLIP.__version__ # << to change in __init__.py
 
+
 setup(
     name = NAME,
     version = VERSION,
