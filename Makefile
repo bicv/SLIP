@@ -1,6 +1,7 @@
-default: pypi_docs
 NAME = SLIP
 VERSION=`python3 -c'import SLIP; import matplotlib; print(SLIP.__version__)'`
+PYTHON = python3
+default: $(NAME).pdf
 
 edit:
 	mvim -p setup.py src/__init__.py src/$(NAME).py README.md Makefile requirements.txt
@@ -14,10 +15,10 @@ pypi_tags:
 	git push --tags origin master
 
 pypi_push:
-	python3 setup.py register
+	$(PYTHON) setup.py register
 
 pypi_upload:
-	python3 setup.py sdist upload
+	$(PYTHON) setup.py sdist upload
 
 pypi_docs:
 	#rm web.zip
@@ -32,12 +33,15 @@ install_dev:
 todo:
 	grep -R * (^|#)[ ]*(TODO|FIXME|XXX|HINT|TIP)( |:)([^#]*)
 
+console:
+	open -a /Applications/Utilities/Console.app/ log-sparseedges-debug.log
+
 # macros for tests
 %.html: %.ipynb
 	runipy $< --html $@
 
 %.pdf: %.ipynb
-	ipython3 nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to latex --post PDF $<
+	jupyter nbconvert --SphinxTransformer.author='Laurent Perrinet (INT, UMR7289)' --to pdf $<
 
 # cleaning macros
 clean_tmp:

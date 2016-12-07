@@ -750,6 +750,12 @@ class Image:
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
+    def savefig(self, fig, fname, display=True):
+        for format_ in self.pe.formats: fig.savefig(fname + '.' + format_, self.pe.dpi)
+        if display:
+            from IPython.display import SVG, display
+            return display(SVG(filename=fname + '.svg'))
+
 def _test():
     import doctest
     doctest.testmod()
