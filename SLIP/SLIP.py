@@ -750,8 +750,11 @@ class Image:
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def savefig(self, fig, fname, formats=None, display=False):
+    def savefig(self, fig, fname, figpath=None, formats=None, display=False):
         if formats is None: formats = self.pe.formats
+        if not figpath is None:
+            import os
+            fname = os.path.join(figpath, fname)
         for format_ in formats: fig.savefig(fname + '.' + format_, dpi=self.pe.dpi)
         if display:
             from IPython.display import SVG, display
