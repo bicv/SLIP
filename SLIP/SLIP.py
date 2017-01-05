@@ -750,16 +750,22 @@ class Image:
                                     title=title, FT_title=FT_title, im_title=im_title, norm=norm, vmin=vmin, vmax=vmax)
         return fig, a1, a2
 
-    def savefig(self, fig, fname, figpath=None, formats=None, display=False):
+    def savefig(self, fig, fname, figpath=None, formats=None, display=True):
         if formats is None: formats = self.pe.formats
         if figpath is None: figpath = self.pe.figpath
         if not figpath is None:
             import os
             fname = os.path.join(figpath, fname)
         for format_ in formats: fig.savefig(fname + '.' + format_, dpi=self.pe.dpi)
-        if display:
-            from IPython.display import SVG, display
-            return display(SVG(filename=fname + '.svg'))
+        if display and 'svg' in formats:
+            try:
+                from IPython.display import HTML #SVG, display
+                # return display(SVG(filename=fname + '.svg'), width=100, embed=False)
+                html = HTML('<img src="{}" width=100%/>'.format(fname + '.svg'))
+                html.reload()
+                return html
+            except:
+                pass
 
 def _test():
     import doctest
