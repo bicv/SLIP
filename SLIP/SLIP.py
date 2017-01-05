@@ -752,6 +752,7 @@ class Image:
 
     def savefig(self, fig, fname, figpath=None, formats=None, display=False):
         if formats is None: formats = self.pe.formats
+        if figpath is None: figpath = self.pe.figpath
         if not figpath is None:
             import os
             fname = os.path.join(figpath, fname)
