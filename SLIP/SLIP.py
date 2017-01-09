@@ -36,8 +36,17 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
 
 
     """
-    import imageio
-    image = imageio.imread(URL)
+    import numpy as np
+    try:
+        import imageio
+        image = imageio.imread(URL)
+    except:
+        from PIL import Image
+        import requests
+        from io import BytesIO
+        response = requests.get(URL)
+        image = np.array(Image.open(BytesIO(response.content)))
+
     if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 256.
     image = np.array(image, dtype=np.float)
     if image.ndim > 3:
