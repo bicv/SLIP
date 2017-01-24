@@ -40,7 +40,7 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     try:
         import imageio
         image = imageio.imread(URL)
-    except:
+    except Exception:
         from PIL import Image
         import requests
         from io import BytesIO
@@ -141,11 +141,11 @@ class Image:
             try:
                 # is it the URL of an image?
                 im = imread(pe)
-            except: #  loading an image failed
+            except Exception: #  loading an image failed
                 try:
                     # is it the URL of a file containing a dict?
                     return ParameterSet(pe)
-                except:
+                except Exception:
                     # is it just the name of a file containing a dict?
                     return ParameterSet('file://' + pe)
             else:
@@ -157,18 +157,18 @@ class Image:
     def init_logging(self, filename='debug.log', name="SLIP"):
         try:
             PID = os.getpid()
-        except:
+        except Exception:
             PID = 'N/A'
         try:
             HOST = os.uname()[1]
-        except:
+        except Exception:
             HOST = 'N/A'
         self.TAG = 'host-' + HOST + '_pid-' + str(PID)
         logging.basicConfig(filename=filename, format='%(asctime)s@[' + self.TAG + '] %(message)s', datefmt='%Y-%m-%d-%H:%M:%S')
         self.log = logging.getLogger(name)
         try:
             self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
-        except:
+        except Exception:
             self.pe.verbose = logging.WARN
             self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
 
@@ -196,7 +196,7 @@ class Image:
         """
         try: # to read pe as a tuple
             self.pe.N_X, self.pe.N_Y = self.get_size(im)
-        except:
+        except Exception:
             self.log.error('Could not set the size of the SLIP object')
         self.pe.N_X = self.pe.N_X # n_x
         self.pe.N_Y = self.pe.N_Y # n_y
@@ -247,7 +247,7 @@ class Image:
             for garbage in GARBAGE:
                 if garbage in filelist: filelist.remove(garbage)
             return filelist
-        except:
+        except Exception:
             self.log.error('XX failed opening database ',  self.full_url(name_database))
             return 'Failed to load directory'
 
@@ -595,7 +595,7 @@ class Image:
                 K = np.load(fname())
                 if recompute:
                     raise('Recomputing the whitening filter')
-            except:
+            except Exception:
                 print('👾 Learning the whitening filter')
                 power_spectrum = 0. # power spectrum
                 for i_learning in range(self.pe.white_n_learning):
@@ -773,7 +773,7 @@ class Image:
                 html = HTML('<img src="{}" width=100%/>'.format(fname + '.svg'))
                 html.reload()
                 return html
-            except:
+            except Exception:
                 pass
 
 def _test():
