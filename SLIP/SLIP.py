@@ -37,15 +37,15 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
 
     """
     import numpy as np
-    if True:#try:
+    try:
         import imageio
         image = imageio.imread(URL)
-    # except Exception:
-    #     from PIL import Image
-    #     import requests
-    #     from io import BytesIO
-    #     response = requests.get(URL)
-    #     image = np.array(Image.open(BytesIO(response.content)))
+    except Exception:
+        from PIL import Image
+        import requests
+        from io import BytesIO
+        response = requests.get(URL)
+        image = np.array(Image.open(BytesIO(response.content)))
 
     if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 256.
     image = np.array(image, dtype=np.float)
@@ -308,6 +308,7 @@ class Image:
             imagelist.append([filename, croparea])
 
         return imagelist
+
     def get_imagelist(self, exp, name_database='natural'):
         """
         returns an imagelist from a pickled database.
@@ -379,18 +380,18 @@ class Image:
         return image_, filename, croparea
 
     def extract_patches_2d(self, image, patch_size, N_patches):
-         """
-         Reshape a 2D image into a collection of patches
+        """
+        Reshape a 2D image into a collection of patches
 
-         redundant with self.patch, but similar call as
-          https://github.com/scikit-learn/scikit-learn/blob/14031f6/sklearn/feature_extraction/image.py#L300
+        redundant with self.patch, but similar call as
+        https://github.com/scikit-learn/scikit-learn/blob/14031f6/sklearn/feature_extraction/image.py#L300
 
-         """
-         data = np.zeros((patch_size[0], patch_size[1], N_patches))
-         for i_patch in range(N_patches):
+        """
+        data = np.zeros((N_patches, patch_size[0], patch_size[1]))
+        for i_patch in range(N_patches):
             x_rand = int(np.ceil((self.pe.N_X-patch_size[0])*np.random.rand()))
             y_rand = int(np.ceil((self.pe.N_Y-patch_size[1])*np.random.rand()))
-            data[:, :, i_patch] = image[(x_rand):(x_rand+patch_size[0]), (y_rand):(y_rand+patch_size[1])]
+            data[i_patch, :, :] = image[(x_rand):(x_rand+patch_size[0]), (y_rand):(y_rand+patch_size[1])]
 
         return data
 
