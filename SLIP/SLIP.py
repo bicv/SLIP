@@ -796,7 +796,8 @@ class Image:
                 </table></center>""".format('./' + fname + '.svg'))
                 html.reload()
                 return display(html)
-            except Exception:
+            except Exception as e:
+                print('Something unexpcted happened during the display...', e)
                 pass
         else:
             return fig
