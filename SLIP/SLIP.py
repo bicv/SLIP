@@ -504,7 +504,6 @@ class Image:
 
     def trans(self, u, v):
         return np.exp(-1j*2*np.pi*(u*self.f_x + v*self.f_y))
-#         return np.exp(-1j*2*np.pi*(u/self.pe.N_X*self.f_x + v/self.pe.N_Y*self.f_y))
 
     def translate(self, image, vec, preshift=True):
         """
