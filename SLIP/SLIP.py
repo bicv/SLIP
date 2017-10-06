@@ -751,13 +751,13 @@ class Image:
             plt.setp(a1, title='Spectrum')
             plt.setp(a2, title='Image')
         if not(axis):
-            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=[''], yticklabels=[''])
+            plt.setp(a1, yticks=[self.pe.N_X/2], xticks=[self.pe.N_Y/2], xticklabels=[''], yticklabels=[''])
             plt.setp(a2, xticks=[], yticks=[])
         else:
-            plt.setp(a1, xticks=[self.pe.N_X/2], yticks=[self.pe.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
-            plt.setp(a2, xticks=np.linspace(0, self.pe.N_X, 5), yticks=np.linspace(0, self.pe.N_Y, 5))
-            plt.setp(a1, xlabel=r'$f_x$', ylabel=r'$f_y$')
-            plt.setp(a2, xlabel=r'$f_x$', ylabel=r'$f_y$')
+            plt.setp(a1, yticks=[self.pe.N_X/2], xticks=[self.pe.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
+            plt.setp(a2, yticks=np.linspace(0, self.pe.N_X, 5), xticks=np.linspace(0, self.pe.N_Y, 5))
+            plt.setp(a1, ylabel=r'$f_x$', xlabel=r'$f_y$')
+            plt.setp(a2, ylabel=r'$f_x$', xlabel=r'$f_y$')
 
         a1.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
