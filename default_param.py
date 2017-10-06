@@ -2,8 +2,10 @@
 # Image
 'N_X' : 256, # size of images
 'N_Y' : 256, # size of images
-'do_mask'  : False, # used forinstance in the Matching Pursuit algorithm self.pe.do_mask
+'do_mask'  : True, # used for instance in the Matching Pursuit algorithm self.pe.do_mask
 'mask_exponent': 3., #sharpness of the mask
+'use_cache' : True,
+'verbose': 0,
 'figpath': 'results',
 'matpath': 'data_cache',
 'datapath': 'database',
@@ -20,5 +22,4 @@
 'white_alpha' : 1.4,
 'white_steepness' : 4.,
 'white_recompute' : False,
-'use_cache' : True,
 }
