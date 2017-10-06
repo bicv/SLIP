@@ -725,7 +725,7 @@ class Image:
             ax.set_xlabel(xlabel)
         ax.axis([0, self.pe.N_Y-1, self.pe.N_X-1, 0])
         if mask:
-            linewidth_mask = 1 # HACK
+            linewidth_mask = 1
             circ = plt.Circle((.5*self.pe.N_Y, .5*self.pe.N_Y), radius=0.5*self.pe.N_Y-linewidth_mask/2., fill=False, facecolor='none', edgecolor = 'black', alpha = 0.5, ls='dashed', lw=linewidth_mask)
             ax.add_patch(circ)
         return fig, ax
@@ -757,7 +757,7 @@ class Image:
             plt.setp(a1, yticks=[self.pe.N_X/2], xticks=[self.pe.N_Y/2], xticklabels=['0.'], yticklabels=['0.'])
             plt.setp(a2, yticks=np.linspace(0, self.pe.N_X, 5), xticks=np.linspace(0, self.pe.N_Y, 5))
             plt.setp(a1, ylabel=r'$f_x$', xlabel=r'$f_y$')
-            plt.setp(a2, ylabel=r'$f_x$', xlabel=r'$f_y$')
+            plt.setp(a2, ylabel=r'$X$', xlabel=r'$Y$')
 
         a1.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
         a2.axis('equal')#[0, self.pe.N_X-1, self.pe.N_Y-1, 0])
