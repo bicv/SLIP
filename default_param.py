@@ -20,4 +20,5 @@
 'white_alpha' : 1.4,
 'white_steepness' : 4.,
 'white_recompute' : False,
+'use_cache' : True,
 }
