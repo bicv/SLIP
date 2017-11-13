@@ -294,6 +294,7 @@ class Image:
 
         filelist = self.list_database(name_database)
         N_image_db = len(filelist)
+        if N_image_db==0: print('No image found. I will certainly fell upset by now.')
         if self.pe.N_image==None:
             N_image = len(filelist)
         else:
