@@ -16,7 +16,7 @@ setup(
     description = "SLIP: a Simple Library for Image Processing",
     long_description=open("README.md", 'r', encoding='utf-8').read(),
     license = "GPLv2",
-    install_requires=['numpy', 'NeuroTools'],
+    install_requires=['numpy', 'imageio', 'NeuroTools'],
     extras_require={
                 'html' : [
                          'vispy',
