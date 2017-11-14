@@ -15,7 +15,7 @@
 'seed': None, # a seed for the Random Number Generator (RNG) for picking images in databases, set to None or a given number to freeze the RNG
 'N_image': None, # number of images to pick in a database, set to None if you want to pick all in the database
 # whitening parameters:
-'white_name_database' : 'serre07_distractors',
+'white_name_database' : 'kodakdb',
 'white_n_learning' : 0,
 'white_N' : .07,
 'white_f_0' : .38, # olshausen = 0.2
