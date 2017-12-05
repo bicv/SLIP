@@ -15,7 +15,7 @@ pypi_tags:
 	git push --tags origin master
 
 pypi_push:
-	$(PYTHON) setup.py register
+	`$(PYTHON)` setup.py register
 
 pypi_upload:
 	$(PYTHON) setup.py sdist upload
