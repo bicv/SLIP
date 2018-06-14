@@ -376,10 +376,13 @@ class Image:
                 croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
 
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
+<<<<<<< HEAD
         if do_whitening is None: do_whitening = self.pe.do_whitening
         if do_whitening: image_ = self.whitening(image_)
         if self.pe.do_mask: image_ *= self.mask
 
+=======
+>>>>>>> 389ecea1de0f30a394c268075b501876dda4b0cd
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
         return image_, filename, croparea
 
