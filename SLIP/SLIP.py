@@ -341,7 +341,7 @@ class Image:
         return imagelist
 
     def patch(self, name_database, i_image=None, filename=None, croparea=None, threshold=0.2, verbose=True,
-            preprocess=True, center=True, use_max=True):
+            preprocess=True, center=True, use_max=True, do_whitening=False):
         """
         takes a subimage of size s (a tuple)
 
@@ -376,8 +376,11 @@ class Image:
                 croparea = [x_rand, x_rand+self.pe.N_X, y_rand, y_rand+self.pe.N_Y]
 
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
-        image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
+        if do_whitening is None: do_whitening = self.pe.do_whitening
+        if do_whitening: image_ = self.whitening(image_)
         if self.pe.do_mask: image_ *= self.mask
+
+        image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
         return image_, filename, croparea
 
     def extract_patches_2d(self, image, patch_size, N_patches):
