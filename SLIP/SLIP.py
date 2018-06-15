@@ -382,9 +382,12 @@ class Image:
         if do_whitening: image_ = self.whitening(image_)
 
         # MASK
-        if self.pe.do_mask: image_ *= self.mask
         image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
+        if self.pe.do_mask: image_ *= self.mask
+
+        # MASK
         return image_, filename, croparea
+
 
     def extract_patches_2d(self, image, patch_size, N_patches):
         """
