@@ -377,17 +377,30 @@ class Image:
 
         image_ = image[croparea[0]:croparea[1], croparea[2]:croparea[3]]
 
-        # WHITENING
-        if do_whitening is None: do_whitening = self.pe.do_whitening
-        if do_whitening: image_ = self.whitening(image_)
+        # PIPELINE
+        image_ = self.pipeline(image_, preprocess=preprocess, center=center, use_max=use_max, do_whitening=do_whitening)
 
-        # MASK
-        image_ = self.normalize(image_, preprocess=preprocess, center=center, use_max=use_max)
-        if self.pe.do_mask: image_ *= self.mask
-
-        # MASK
         return image_, filename, croparea
 
+    def pipeline(self, image, preprocess=True, center=True, use_max=True, do_whitening=False):
+        """
+
+        pre-processing pipeline
+
+        """
+        if preprocess: image = self.preprocess(image)
+
+        # WHITENING
+        if do_whitening is None: do_whitening = self.pe.do_whitening
+        if do_whitening: image = self.whitening(image)
+
+        # MASK
+        if self.pe.do_mask: image *= self.mask
+
+        # Normalizing
+        image = self.normalize(image, center=center, use_max=use_max)
+
+        return image
 
     def extract_patches_2d(self, image, patch_size, N_patches):
         """
@@ -405,12 +418,9 @@ class Image:
 
         return data
 
-
-
-    def normalize(self, image, preprocess=True, center=True, use_max=True):
+    def normalize(self, image, center=True, use_max=True):
         image_ = image.copy()
         if center: image_ -= np.median(image_)
-        if preprocess: image_ = self.preprocess(image_)
         if use_max:
             if np.max(np.abs(image_.ravel()))>0: image_ /= np.max(np.abs(image_.ravel()))
         else:
