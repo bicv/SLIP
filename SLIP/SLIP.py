@@ -805,7 +805,7 @@ class Image:
         if not figpath is '':
             import os
             fname = os.path.join(figpath, fname)
-        for format_ in formats: fig.savefig(fname + '.' + format_, dpi=self.pe.dpi)
+        for format_ in formats:
             fig.savefig(fname.replace('.' + format_, '') + '.' + format_, dpi=self.pe.dpi)
         if display and 'svg' in formats:
             try:
