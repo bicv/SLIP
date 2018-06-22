@@ -678,13 +678,16 @@ class Image:
         K = self.whitening_filt()
         return self.FTfilter(image, K)
 
-    def dewhitening(self, white):
+    def dewhitening(self, white, preprocess=True, center=True, use_max=True):
         """
         Returns the dewhitened image
 
         """
         K = self.whitening_filt()
-        return self.FTfilter(white, 1./K)
+        image = self.FTfilter(white, 1./K)
+        if preprocess: image = self.preprocess(image)
+
+        return image
 
     def hist_radial_frequency(self, FT, N_f = 20):
         """
@@ -803,6 +806,7 @@ class Image:
             import os
             fname = os.path.join(figpath, fname)
         for format_ in formats: fig.savefig(fname + '.' + format_, dpi=self.pe.dpi)
+            fig.savefig(fname.replace('.' + format_, '') + '.' + format_, dpi=self.pe.dpi)
         if display and 'svg' in formats:
             try:
                 from IPython.display import display, HTML
