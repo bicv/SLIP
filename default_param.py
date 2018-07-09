@@ -7,7 +7,7 @@
 'use_cache' : True,
 'verbose': 0,
 'figpath': 'results',
-'matpath': 'data_cache',
+'matpath': 'cache_dir',
 'datapath': 'database',
 'figsize': 14.,
 'formats': ['pdf', 'png', 'jpg'],
