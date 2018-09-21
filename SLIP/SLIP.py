@@ -168,9 +168,10 @@ class Image:
         self.log = logging.getLogger(name)
         try:
             self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
-        except Exception:
-            self.pe.verbose = logging.WARN
-            self.log.setLevel(level=self.pe.verbose) #set verbosity to show all messages of severity >= DEBUG
+        except Exception as e:
+            #print('set loglevel generates error', e)
+            self.pe.verbose = logging.DEBUG
+            self.log.setLevel(level=logging.DEBUG) #set verbosity to show all messages of severity >= DEBUG
 
     def get_size(self, im):
         if type(im) is tuple:
@@ -572,7 +573,7 @@ class Image:
         env *= 1-np.exp(-.5*(self.f**2)/((sigma/self.pe.N_X)**2))
         return env
 
-    def olshausen_whitening_filt(self):
+    def olshausen_whitening_filt(self, f_0):
         """
         Returns the whitening filter used by (Olshausen, 98)
 
@@ -580,7 +581,7 @@ class Image:
         power_spectrum =  self.f**(-self.pe.white_alpha*2)
         power_spectrum /= np.mean(power_spectrum)
         K_ols = (power_spectrum)**-.5
-        K_ols *= self.low_pass(f_0=self.pe.white_f_0, steepness=self.pe.white_steepness)
+        K_ols *= self.low_pass(f_0=f_0, steepness=self.pe.white_steepness)
         K_ols /= np.mean(K_ols)
         return  K_ols
 
@@ -607,7 +608,7 @@ class Image:
     def power_spectrum(self, image):
         return fftshift(np.absolute(fft2(image))**2)
 
-    def whitening_filt(self, recompute=False):
+    def whitening_filt(self, recompute=False, f_0=None):
         """
         Returns the envelope of the whitening filter.
 
@@ -649,7 +650,9 @@ class Image:
                 self.mkdir()
                 np.save(fname(), K)
         else:
-            K = self.olshausen_whitening_filt()
+            if f_0 is None:
+                f_0 = self.pe.white_f_0
+            K = self.olshausen_whitening_filt(f_0=f_0)
         return K
 
     def preprocess(self, image):
@@ -671,22 +674,21 @@ class Image:
         return self.FTfilter(image, self.f_mask)
 
 
-    def whitening(self, image):
+    def whitening(self, image, f_0=None):
         """
         Returns the whitened image
         """
-        K = self.whitening_filt()
+        K = self.whitening_filt(f_0=f_0)
         return self.FTfilter(image, K)
 
-    def dewhitening(self, white, preprocess=True, center=True, use_max=True):
+    def dewhitening(self, white, preprocess=True, center=True, use_max=True, f_0=None):
         """
         Returns the dewhitened image
 
         """
-        K = self.whitening_filt()
+        K = self.whitening_filt(f_0=f_0)
         image = self.FTfilter(white, 1./K)
         if preprocess: image = self.preprocess(image)
-
         return image
 
     def hist_radial_frequency(self, FT, N_f = 20):
