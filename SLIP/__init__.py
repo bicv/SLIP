@@ -5,7 +5,6 @@ __author__ = "(c) Laurent Perrinet INT - CNRS"
 __version__ = '20191112'
 __licence__ = 'GPLv2'
 from .SLIP import Image, imread
-
 ############################  FIGURES   ########################################
 def init_pylab():
     from NeuroTools import check_dependency
