@@ -14,11 +14,9 @@ pypi_tags:
 	git tag $(VERSION) -m "Adds a tag so that we can put this on PyPI."
 	git push --tags origin master
 
-pypi_push:
-	`$(PYTHON)` setup.py register
-
 pypi_upload:
-	$(PYTHON) setup.py sdist upload
+	$(PYTHON) setup.py sdist #upload
+	twine upload dist/*
 
 pypi_docs:
 	#rm web.zip
