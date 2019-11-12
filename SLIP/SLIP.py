@@ -548,7 +548,7 @@ class Image:
     def retina(self, df=.07, sigma=.5):
         """
         A parametric description of the envelope of retinal processsing.
-        See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
+        See https://laurentperrinet.github.io/sciblog/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
         for more information.
 
         In digital images, some of the energy in Fourier space is concentrated outside the
@@ -668,7 +668,7 @@ class Image:
             - information that relates to information of the order the size of the image. This
             involves discarding information at low-level frequencies.
 
-        See http://blog.invibe.net/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
+        See https://laurentperrinet.github.io/sciblog/posts/2015-05-21-a-simple-pre-processing-filter-for-image-processing.html
         for more information.
         """
         return self.FTfilter(image, self.f_mask)

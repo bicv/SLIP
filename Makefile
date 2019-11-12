@@ -6,7 +6,7 @@ default: $(NAME).pdf
 edit:
 	mvim -p setup.py src/__init__.py src/$(NAME).py README.md Makefile requirements.txt
 
-pypi_all: pypi_tags pypi_push pypi_upload
+pypi_all: pypi_tags pypi_upload
 # https://docs.python.org/2/distutils/packageindex.html
 pypi_tags:
 	git commit -am' tagging for PyPI '
