@@ -58,3 +58,5 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+database/serre07_targets/
+database/serre07_distractors/
