@@ -804,7 +804,7 @@ class Image:
     def savefig(self, fig, fname, figpath='', formats=None, display=True):
         if formats is None: formats = self.pe.formats
         if figpath is None: figpath = self.pe.figpath
-        if not figpath is '':
+        if figpath != '':
             import os
             fname = os.path.join(figpath, fname)
         for format_ in formats:
