@@ -455,28 +455,6 @@ class Image:
         fx, fy = fx*1./self.pe.N_X, fy*1./self.pe.N_Y
         return fx, fy
 
-#     def expand_complex(self, FT, hue=False):
-#         if hue:
-#             image_temp = np.zeros((FT.shape[0], FT.shape[1], 4))
-#             import matplotlib.cm as cm
-#             angle = np.angle(FT)/2./np.pi+.5
-#             print 'angle ', angle.min(), angle.max()
-#             alpha = np.abs(FT)
-#             alpha /= alpha.max()
-#             print 'alpha ', alpha.min(), alpha.max()
-#             image_temp = cm.hsv(angle)#, alpha=alpha)
-#             print image_temp.shape, image_temp.min(), image_temp.max()
-#         else:
-#             image_temp = 0.5 * np.ones((FT.shape[0], FT.shape[1], 3))
-#             FT_ = self.normalize(FT)
-#             print 'real ', FT_.real.min(), FT_.real.max()
-#             print 'imag ', FT_.imag.min(), FT_.imag.max()
-#             image_temp[:,:,0] = 0.5 + 0.5 * FT_.real # * (FT_.real>0) #np.angle(FT)/2./np.pi+.5 #
-# #            alpha = np.abs(FT)
-# #            alpha /= alpha.max()
-#             image_temp[:,:,1] = 0.5
-#             image_temp[:,:,2] = 0.5 + 0.5 * FT_.imag #  * (FT_.imag>0)  #alpha
-#         return image_temp
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
