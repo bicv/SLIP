@@ -451,7 +451,7 @@ class Image:
         # transforms and their frequencies to put the zero-frequency components in the
         # middle, and np.fft.ifftshift(A) undoes that shift.
         #
-        fx, fy = np.mgrid[(-self.pe.N_X//2):((self.pe.N_X-1)//2 + 1), (-self.pe.N_Y//2):((self.pe.N_Y-1)//2 + 1)]
+        fx, fy = np.mgrid[(-self.pe.N_X//2):(self.pe.N_X+1)//2, (-self.pe.N_Y//2):(self.pe.N_Y+1)//2]
         fx, fy = fx*1./self.pe.N_X, fy*1./self.pe.N_Y
         return fx, fy
 
@@ -494,7 +494,7 @@ class Image:
         else:
             f_radius = np.zeros(self.f.shape)
             f_radius = self.f**alpha
-            f_radius[(self.pe.N_X-1)//2 + 1 , (self.pe.N_Y-1)//2 + 1 ] = np.inf
+            f_radius[(self.pe.N_X+1)//2, (self.pe.N_Y+1)//2] = np.inf
             return 1. / f_radius
 
     # Fourier number crunching
