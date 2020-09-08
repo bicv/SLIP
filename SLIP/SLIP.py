@@ -480,7 +480,7 @@ class Image:
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
-        R2[self.pe.N_X//2 , self.pe.N_Y//2] = 1e-12 # to avoid errors when dividing by frequency
+        R2[(self.pe.N_X+1)//2 , (self.pe.N_Y+1)//2] = 1e-12 # to avoid errors when dividing by frequency
         return np.sqrt(R2)
 
     def frequency_angle(self):
