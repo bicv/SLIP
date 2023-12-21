@@ -6,8 +6,6 @@ SLIP: a Simple Library for Image Processing.
 See http://pythonhosted.org/SLIP
 
 """
-import numpy as np
-
 def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     """
     Loads whatever image. Returns a grayscale (2D) image.
