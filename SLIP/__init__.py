@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function, absolute_import
 __author__ = "(c) Laurent Perrinet INT - CNRS"
-__version__ = '20140419'
+__version__ = '20140420'
 __licence__ = 'GPLv2'
 from .SLIP import Image, imread
 ############################  FIGURES   ########################################
