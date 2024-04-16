@@ -6,6 +6,8 @@ SLIP: a Simple Library for Image Processing.
 See http://pythonhosted.org/SLIP
 
 """
+import numpy as np
+
 def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     """
     Loads whatever image. Returns a grayscale (2D) image.
@@ -37,7 +39,7 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
     import numpy as np
     try:
         import imageio
-        image = imageio.imread(URL)
+        image = imageio.v2.imread(URL)
     except Exception:
         from PIL import Image
         import requests
@@ -45,8 +47,8 @@ def imread(URL, grayscale=True, rgb2gray=[0.2989, 0.5870, 0.1140]):
         response = requests.get(URL)
         image = np.array(Image.open(BytesIO(response.content)))
 
-    if image.dtype == np.uint8: image = np.array(image, dtype=np.float) / 256.
-    image = np.array(image, dtype=np.float)
+    if image.dtype == np.uint8: image = np.array(image, dtype=float) / 256.
+    image = np.array(image, dtype=float)
     if image.ndim > 3:
         raise ValueError('dimension higher than 3')
     if image.ndim == 3:
@@ -453,6 +455,28 @@ class Image:
         fx, fy = fx*1./self.pe.N_X, fy*1./self.pe.N_Y
         return fx, fy
 
+#     def expand_complex(self, FT, hue=False):
+#         if hue:
+#             image_temp = np.zeros((FT.shape[0], FT.shape[1], 4))
+#             import matplotlib.cm as cm
+#             angle = np.angle(FT)/2./np.pi+.5
+#             print 'angle ', angle.min(), angle.max()
+#             alpha = np.abs(FT)
+#             alpha /= alpha.max()
+#             print 'alpha ', alpha.min(), alpha.max()
+#             image_temp = cm.hsv(angle)#, alpha=alpha)
+#             print image_temp.shape, image_temp.min(), image_temp.max()
+#         else:
+#             image_temp = 0.5 * np.ones((FT.shape[0], FT.shape[1], 3))
+#             FT_ = self.normalize(FT)
+#             print 'real ', FT_.real.min(), FT_.real.max()
+#             print 'imag ', FT_.imag.min(), FT_.imag.max()
+#             image_temp[:,:,0] = 0.5 + 0.5 * FT_.real # * (FT_.real>0) #np.angle(FT)/2./np.pi+.5 #
+# #            alpha = np.abs(FT)
+# #            alpha /= alpha.max()
+#             image_temp[:,:,1] = 0.5
+#             image_temp[:,:,2] = 0.5 + 0.5 * FT_.imag #  * (FT_.imag>0)  #alpha
+#         return image_temp
     def frequency_radius(self):
 #         N_X, N_Y = self.f_x.shape[0], self.f_y.shape[1]
         R2 = self.f_x**2 + self.f_y**2
