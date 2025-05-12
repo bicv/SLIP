@@ -8,3 +8,5 @@ This library collects different Image Processing tools for use with the  [LogGab
 
 More information is available @ http://nbviewer.ipython.org/github/bicv/SLIP/blob/master/SLIP.ipynb
 Tests for the packages are available @ http://nbviewer.ipython.org/github/bicv/SLIP/blob/master/test_SLIP.ipynb
+
+![© @maxpool@mathstodon.xyz](SLIP_neuromatch.social/@maxpool@mathstodon.xyz_592bf1202d75dd10.jpeg)
